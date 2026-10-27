@@ -80,7 +80,7 @@
     var h = location.hash.replace(/^#\/?/, '').split('/'), name = h[0] || 'dashboard';
     if (!routes[name]) name = 'dashboard';
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === (name === 'invoice' || name === 'edit' ? 'invoices' : name)); });
-    routes[name](h[1]); window.scrollTo(0, 0); view.dataset.page = name; document.title = 'Ledgerly'; tabOn(name); decorateEmpty(name);
+    routes[name](h[1]); window.scrollTo(0, 0); view.dataset.page = name; document.title = 'Ledgerly'; tabOn(name); decorateEmpty(name); if (window.__fx) window.__fx.after(name);
   }
   var EMPTY_ICON = { bills: '🧾', subs: '🔁', income: '💰', loans: '🏦', wealth: '🎯', split: '🤝', reminders: '⏰', expenses: '💸', invoices: '📄', clients: '👥' };
   var EMPTY_TITLE = { bills: 'No bills yet', subs: 'No subscriptions yet', income: 'No income yet', loans: 'No loans yet', wealth: 'Nothing here yet', split: 'No shared groups yet', reminders: 'Nothing to remind you about', expenses: 'No expenses yet', invoices: 'No invoices yet', clients: 'No clients yet' };

@@ -105,3 +105,27 @@ body[data-mode] #fab,#tabbar .plus{background:var(--acc);box-shadow:0 8px 24px r
 
 a{color:var(--acc)}.hero a,.btn,.chip,.srow,.mrow{color:inherit}#nav a,#tabbar a{color:var(--mut)}#nav a.on,#tabbar a.on{color:var(--acc)}.btn.p{color:#fff}
 @media(max-width:820px){.hero .perday{display:flex;font-size:13px}}
+
+/* ---- motion ---- */
+.fxcanvas{position:absolute;inset:0;width:100%!important;height:100%!important;pointer-events:none;opacity:0;transition:opacity 1.2s ease;border-radius:inherit}
+.hero{position:relative;overflow:hidden}.hero>*:not(.fxcanvas){position:relative;z-index:1}
+.welcome{position:relative;overflow:hidden}.coinhost{position:absolute;right:16px;top:6px;width:150px;height:150px;pointer-events:none;opacity:.95}.coinhost .fxcanvas{border-radius:0}
+@media(max-width:700px){.coinhost{width:96px;height:96px;right:8px;top:8px}}
+@keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes draw{from{stroke-dasharray:0 999}}
+@keyframes dlgin{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:none;opacity:1}}
+#view>*{animation:vin .38s cubic-bezier(.2,.7,.2,1) both}
+#view>*:nth-child(2){animation-delay:.04s}#view>*:nth-child(3){animation-delay:.08s}#view>*:nth-child(4){animation-delay:.12s}#view>*:nth-child(5){animation-delay:.16s}#view>*:nth-child(n+6){animation-delay:.2s}
+.bar .bars i{transform-origin:bottom;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}.bar>div:nth-child(2) .bars i{animation-delay:.05s}.bar>div:nth-child(3) .bars i{animation-delay:.1s}.bar>div:nth-child(4) .bars i{animation-delay:.15s}.bar>div:nth-child(5) .bars i{animation-delay:.2s}.bar>div:nth-child(6) .bars i{animation-delay:.25s}
+.donut circle[stroke-dasharray]{animation:draw 1s cubic-bezier(.3,.7,.2,1) both}
+.stack i{transform-origin:left;animation:grow .8s both;animation-name:growx}@keyframes growx{from{transform:scaleX(0)}to{transform:none}}
+dialog[open]{animation:dlgin .24s cubic-bezier(.2,.8,.2,1)}dialog::backdrop{animation:fade .24s both}@keyframes fade{from{opacity:0}to{opacity:1}}
+.card,.chip,.btn,.pick,.qa,#nav a,.srow{transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease,border-color .18s ease,color .18s ease}
+.card.click:hover,.pick:hover,.qa:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(15,60,45,.12)}
+.btn:active,.chip:active,#fab:active,#tabbar .plus:active{transform:scale(.95)}
+#fab,#tabbar .plus{transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .2s}#fab:hover{transform:rotate(90deg) scale(1.06)}
+#fab{animation:pop .5s .3s cubic-bezier(.3,1.5,.5,1) both}
+#toast{transition:opacity .25s,transform .25s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
