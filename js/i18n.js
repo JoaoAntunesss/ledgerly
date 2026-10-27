@@ -205,6 +205,17 @@
   D['Home'] = 'Início'; D['No bills yet']='Ainda sem contas'; D['No subscriptions yet']='Ainda sem subscrições'; D['No income yet']='Ainda sem rendimentos'; D['No loans yet']='Ainda sem créditos'; D['Nothing here yet']='Ainda não há nada aqui'; D['No shared groups yet']='Ainda sem grupos partilhados'; D['Nothing to remind you about']='Nada para lembrar'; D['No expenses yet']='Ainda sem despesas'; D['No invoices yet']='Ainda sem faturas'; D['No clients yet']='Ainda sem clientes'; D['✨ Try with demo data']='✨ Experimentar com dados de demonstração'; D['Try with demo data']='Experimentar com dados de demonstração';
   D['Sign in with Google and create']='Entrar com Google e criar'; D['Sign in with Google and join with a code']='Entrar com Google e usar um código'; D['Each person signs in with their own Google account. Only people who have the family code can open the shared space, and everything is encrypted with that code.']='Cada pessoa entra com a sua conta Google. Só quem tem o código de família consegue abrir o espaço partilhado, e tudo é encriptado com esse código.'; D['Choose a password with at least 6 characters']='Escolhe uma palavra-passe com pelo menos 6 caracteres'; D['Could not join the family space']='Não foi possível entrar no espaço de família';
   D['before it is stored online.']='antes de ser guardado online.'; D['before it is stored online, so the database only ever sees scrambled text.']='antes de ser guardado online, por isso a base de dados só vê texto baralhado.';
+  D['Share with family · Google']='Partilhar com a família · Google'; D['I have a family code']='Tenho um código de família';
+  D['Share household bills, subscriptions, loans, goals and more with your family on all your devices. Data is']='Partilha contas da casa, subscrições, créditos, metas e mais com a tua família em todos os dispositivos. Os dados são';
+  D['encrypted on your device']='encriptados no teu dispositivo';
+  D['before it is stored online, so the database only ever sees scrambled text. You choose how much to share: just the household, or']='antes de serem guardados online, por isso a base de dados só vê texto baralhado. Tu escolhes o que partilhar: só a casa, ou';
+  D['everything including salaries']='tudo, incluindo salários';
+  D['if you manage money together as a couple.']='se gerem o dinheiro juntos como casal.';
+  D['Use the app on your phone']='Usa a app no telemóvel';
+  D['and']='e';
+  D['your computer with the same data. Sign in with your Google account; your data is']='no computador com os mesmos dados. Entra com a tua conta Google; os teus dados são';
+  D['encrypted with a password only you know']='encriptados com uma palavra-passe que só tu sabes';
+  D['before it is stored online.']='antes de serem guardados online.';
   function tr(v) {
     var t = v.trim(); if (!t) return v;
     if (D.hasOwnProperty(t)) return v.replace(t, D[t]);

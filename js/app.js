@@ -153,7 +153,7 @@
       '<button class="pick" data-mode="home"><b>🏠 Home & family</b><span>Bills, subscriptions, loans, savings, shared costs</span></button>' +
       '<button class="pick" data-mode="work"><b>💼 My business</b><span>Invoices, clients, expenses, VAT</span></button>' +
       '<button class="pick" data-mode="both"><b>✨ Both</b><span>Everything in one place</span></button></div>' +
-      '<p style="margin:14px 0 0"><button class="btn" id="wdemo">Look around with demo data first</button></p></div>';
+      '<p style="margin:14px 0 0"><button class="btn" id="wdemo">Look around with demo data first</button> <button class="btn" data-act="family">👨‍👩‍👧 I have a family code</button></p></div>';
   }
   function daysLeft() { var n = new Date(); return Math.max(1, new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate() - n.getDate() + 1); }
   var SEARCH = { bills: ['#/bills', 'Utilities'], subs: ['#/subs', 'Subscriptions'], expenses: ['#/expenses', 'Expenses'], invoices: ['#/invoice/', 'Invoices'], clients: ['#/clients', 'Clients'], income: ['#/income', 'Income'], loans: ['#/loans', 'Loans'], items: ['#/reminders', 'Warranties'], deadlines: ['#/reminders', 'Deadlines'], accounts: ['#/wealth', 'Accounts'], goals: ['#/wealth', 'Goals'], groups: ['#/split', 'Split expenses'] };
@@ -216,7 +216,7 @@
   }
   function moreSheet() {
     var items = '<button type="button" class="mrow" data-act="search" style="text-align:left;background:none;font:inherit;grid-column:1/-1">🔍 Search</button>' + Array.prototype.map.call(document.querySelectorAll('#nav a'), function (a) { return '<a href="' + a.getAttribute('href') + '" class="mrow">' + a.innerHTML + '</a>'; }).join('');
-    dlg.innerHTML = '<form method="dialog"><h2>All sections</h2><div class="mgrid">' + items + '</div>' + (window.__installEvt || isIOS() ? '<p style="margin-top:14px"><button type="button" class="btn p" id="inst" style="width:100%">📲 Install the app on this phone</button></p>' : '') + '<p style="margin-top:10px"><button type="button" class="btn" data-act="theme" style="width:100%;margin-bottom:8px">🎨 Colours & themes</button><button type="button" class="btn" data-act="lang" style="width:100%">🌐 ' + (LOCALE ? 'English' : 'Português') + '</button></p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
+    dlg.innerHTML = '<form method="dialog"><h2>All sections</h2><div class="mgrid">' + items + '</div>' + (window.__installEvt || isIOS() ? '<p style="margin-top:14px"><button type="button" class="btn p" id="inst" style="width:100%">📲 Install the app on this phone</button></p>' : '') + '<p style="margin-top:10px"><button type="button" class="btn p" data-act="family" style="width:100%;margin-bottom:8px">👨‍👩‍👧 Share with family · Google</button><button type="button" class="btn" data-act="theme" style="width:100%;margin-bottom:8px">🎨 Colours & themes</button><button type="button" class="btn" data-act="lang" style="width:100%">🌐 ' + (LOCALE ? 'English' : 'Português') + '</button></p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
     dlg.onclose = null; dlg.showModal(); dlg.querySelectorAll('a.mrow').forEach(function (a) { a.onclick = function () { dlg.close('x'); }; });
     var i = dlg.querySelector('#inst'); if (i) i.onclick = installApp;
   }
@@ -233,7 +233,7 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__installEvt = e; var b = $('#installbtn'); if (b) b.hidden = false; });
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]'); if (!t) return; var a = t.dataset.act;
-    if (a === 'theme') themeSheet(); else if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp();
+    if (a === 'theme') themeSheet(); else if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp(); else if (a === 'family') { if (dlg.open) dlg.close('x'); var jump = function () { var f = $('#family'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; if (location.hash !== '#/settings') { location.hash = '#/settings'; setTimeout(jump, 250); } else jump(); }
   });
 
 
@@ -515,11 +515,11 @@
 
   function settings() {
     var s = db.settings;
-    view.innerHTML = '<div class="top"><h1>Settings</h1><button class="btn p" id="save">Save</button></div>' +
-      '<div class="card"><h2>Your business</h2><div class="f">' + '<div class="w"><label>What do you use Ledgerly for?</label><select name="mode"><option value="both" ' + ((s.mode || 'both') === 'both' ? 'selected' : '') + '>Home and business</option><option value="home" ' + (s.mode === 'home' ? 'selected' : '') + '>Home & family only</option><option value="work" ' + (s.mode === 'work' ? 'selected' : '') + '>My business only</option></select></div>' + field('Your name / business name', 'name', s.name) + field('Tax ID', 'taxId', s.taxId) + field('Email', 'email', s.email, 'email') + field('IBAN', 'iban', s.iban) + '<div class="w"><label>Address</label><textarea name="address" rows="3">' + esc(s.address) + '</textarea></div></div></div>' +
+    view.innerHTML = '<div class="top"><h1>Settings</h1><button class="btn p" id="save">Save</button></div>' + '<div id="family" style="scroll-margin-top:12px">' + familyHtml() + '</div>' +
+      '<div class="card" style="margin-top:14px"><h2>Your business</h2><div class="f">' + '<div class="w"><label>What do you use Ledgerly for?</label><select name="mode"><option value="both" ' + ((s.mode || 'both') === 'both' ? 'selected' : '') + '>Home and business</option><option value="home" ' + (s.mode === 'home' ? 'selected' : '') + '>Home & family only</option><option value="work" ' + (s.mode === 'work' ? 'selected' : '') + '>My business only</option></select></div>' + field('Your name / business name', 'name', s.name) + field('Tax ID', 'taxId', s.taxId) + field('Email', 'email', s.email, 'email') + field('IBAN', 'iban', s.iban) + '<div class="w"><label>Address</label><textarea name="address" rows="3">' + esc(s.address) + '</textarea></div></div></div>' +
       '<div class="card" style="margin-top:14px"><h2>Invoice defaults</h2><div class="f">' + field('Currency (ISO code)', 'currency', s.currency, 'text', 'maxlength="3"') + field('Default VAT %', 'vat', s.vat, 'text', 'inputmode="decimal"') + field('People sharing the household bills', 'people', s.people, 'number', 'min="1"') + field('Number prefix', 'prefix', s.prefix) + field('Payment terms (days)', 'terms', s.terms, 'number') +
       '<div class="w"><label>Default invoice footer</label><textarea name="footer" rows="2">' + esc(s.footer) + '</textarea></div></div></div>' +
-      '<div class="card" style="margin-top:14px"><h2>Backup & data</h2><p class="mut">Everything is stored in this browser only. Export a backup regularly, and use it to move to another device.</p><div class="row"><button class="btn" id="bk">Export backup (.json)</button><label class="btn" style="margin:0">Import backup<input type="file" id="im" accept="application/json" hidden></label><button class="btn" id="demo">Load demo data</button><button class="btn d" id="wipe">Erase everything</button></div></div>' + lookHtml() + extraSettingsHtml() + familyHtml();
+      '<div class="card" style="margin-top:14px"><h2>Backup & data</h2><p class="mut">Everything is stored in this browser only. Export a backup regularly, and use it to move to another device.</p><div class="row"><button class="btn" id="bk">Export backup (.json)</button><label class="btn" style="margin:0">Import backup<input type="file" id="im" accept="application/json" hidden></label><button class="btn" id="demo">Load demo data</button><button class="btn d" id="wipe">Erase everything</button></div></div>' + lookHtml() + extraSettingsHtml();
     $('#save').onclick = function () {
       var g = function (n) { return val(view, n); };
       db.settings = Object.assign(db.settings, { mode: g('mode') || 'both', name: g('name'), taxId: g('taxId'), email: g('email'), iban: g('iban'), address: view.querySelector('[name=address]').value.trim(), currency: (g('currency') || 'EUR').toUpperCase().slice(0, 3), vat: num(g('vat')), prefix: g('prefix') || 'INV', people: Math.max(1, parseInt(g('people'), 10) || 1), terms: Math.max(0, parseInt(g('terms'), 10) || 0), footer: view.querySelector('[name=footer]').value });
@@ -1252,7 +1252,7 @@
   function familyHtml() {
     var c = syncCfg(), secure = !!(window.crypto && crypto.subtle);
     if (c && c.mode === 'google') return googleHtml();
-    if (!c) return googleHtml() + familyHtml2(c, secure);
+    if (!c) return familyHtml2(c, secure) + googleHtml();
     return familyHtml2(c, secure);
   }
   function familyHtml2(c, secure) {
