@@ -75,7 +75,7 @@
   function field(label, name, v, type, extra) { return '<div><label>' + label + '</label><input name="' + name + '" type="' + (type || 'text') + '" value="' + esc(v) + '" ' + (extra || '') + '></div>'; }
 
   /* ---------- views ---------- */
-  var routes = { dashboard: dashboard, invoices: invoices, invoice: invoiceDoc, edit: invoiceEdit, clients: clients, expenses: expenses, bills: bills, subs: subs, income: incomePage, loans: loansPage, wealth: wealth, reminders: reminders, split: split, vat: vatReport, settings: settings };
+  var routes = { dashboard: dashboard, spending: spending, invoices: invoices, invoice: invoiceDoc, edit: invoiceEdit, clients: clients, expenses: expenses, bills: bills, subs: subs, income: incomePage, loans: loansPage, wealth: wealth, reminders: reminders, split: split, vat: vatReport, settings: settings };
   function route() {
     var h = location.hash.replace(/^#\/?/, '').split('/'), name = h[0] || 'dashboard';
     if (!routes[name]) name = 'dashboard';
@@ -172,7 +172,7 @@
   document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchSheet(); } });
   function greeting() { var h = new Date().getHours(); return h < 6 ? 'Good night' : h < 12 ? 'Good morning' : h < 20 ? 'Good afternoon' : 'Good evening'; }
   function quickChips() {
-    return '<div class="chips"><button class="chip" data-q="bill">＋ Bill</button><button class="chip" data-q="scan">📷 Receipt</button><button class="chip" data-q="expense">＋ Expense</button><button class="chip" data-q="income">＋ Income</button><button class="chip" data-q="sub">＋ Subscription</button><button class="chip" data-q="invoice">＋ Invoice</button></div>';
+    return '<div class="chips"><button class="chip" data-q="purchase">🛒 Purchase</button><button class="chip" data-q="bill">＋ Bill</button><button class="chip" data-q="scan">📷 Receipt</button><button class="chip" data-q="expense">＋ Expense</button><button class="chip" data-q="income">＋ Income</button><button class="chip" data-q="sub">＋ Subscription</button><button class="chip" data-q="invoice">＋ Invoice</button></div>';
   }
   function dashboard() {
     var empty = !db.invoices.length && !db.expenses.length && !db.bills.length && !db.subs.length && !db.loans.length && !db.income.length && !db.accounts.length;
@@ -187,7 +187,7 @@
       html += '<div class="hero card"><div><small>' + (db.income.length ? 'Left over this month (estimate)' : 'Monthly costs (estimate)') + '</small><div class="big ' + (o.left < 0 && db.income.length ? 'neg' : '') + '">' + money(db.income.length ? o.left : o.out) + '</div>' +
         (db.income.length ? '<div class="mut">' + money(o.inc) + ' in · ' + money(o.out) + ' out · you keep ' + (o.inc ? Math.round(Math.max(0, o.left) / o.inc * 100) : 0) + '%' + '</div>' + (o.left > 0 ? '<div class="perday"><span>≈</span><b>' + money(o.left / daysLeft()) + '</b><span>per day to spend, until month end</span></div>' : '') : '<div class="mut">Add your <a href="#/income">income</a> to see what is left each month.</div>') + '</div>' +
         '<div class="stack" role="img" aria-label="Where this month goes">' + parts.map(function (p) { return '<i style="flex:' + p.v + ';background:' + p.c + '" title="' + esc(p.l) + ' ' + money(p.v) + '"></i>'; }).join('') + '</div></div>';
-      html += '<div style="margin-top:14px">' + warn + '</div>'; warn = ''; html += '<div class="grid g2" style="margin-top:14px"><div class="card"><h2>Where your money goes</h2><div class="dn">' + donut(parts, 'per month', money(o.out)) + '<div class="lg">' + parts.map(function (p) { return '<div><i style="background:' + p.c + '"></i><span>' + esc(p.l) + '</span><b>' + money(p.v) + '</b><em>' + Math.round(p.v / (o.out || 1) * 100) + '%</em></div>'; }).join('') + '</div></div></div>' +
+      html += '<div style="margin-top:14px">' + warn + '</div>'; warn = ''; html += '<div class="grid g2" style="margin-top:14px"><div class="card"><h2 style="display:flex;justify-content:space-between">Where your money goes<a href="#/spending" style="font-size:13px;font-weight:600">Details →</a></h2><div class="dn">' + donut(parts, 'per month', money(o.out)) + '<div class="lg">' + parts.map(function (p) { return '<div><i style="background:' + p.c + '"></i><span>' + esc(p.l) + '</span><b>' + money(p.v) + '</b><em>' + Math.round(p.v / (o.out || 1) * 100) + '%</em></div>'; }).join('') + '</div></div></div>' +
         '<div class="card"><h2>Last 6 months</h2><div class="bar" style="height:150px">' + flows.map(function (f) { return '<div><span class="bars"><i style="height:' + f.inc / fmax * 100 + '%" title="In ' + money(f.inc) + '"></i><i class="e" style="height:' + f.out / fmax * 100 + '%;background:var(--c2)" title="Out ' + money(f.out) + '"></i></span>' + f.label + '</div>'; }).join('') + '</div><div class="legend"><span><i style="background:var(--c4)"></i>Money in</span><span><i style="background:var(--c2)"></i>Money out</span></div></div></div>';
     }
     html += warn;
@@ -211,8 +211,8 @@
     var go = function (hash, sel, wait) { if (location.hash !== hash) location.hash = hash; else route(); setTimeout(function () { var e = $(sel); if (e) e.click(); }, wait || 80); };
     if (dlg.open) dlg.close('x');
     if (k === 'bill') billForm(); else if (k === 'sub') subForm(); else if (k === 'income') incForm(); else if (k === 'invoice') location.hash = '#/edit/new';
-    else if (k === 'expense') go('#/expenses', '#new'); else if (k === 'scan') go('#/expenses', '#scan');
-    else if (k === 'loan') loanForm(); else if (k === 'goal') { go('#/wealth', '#newg'); } else if (k === 'account') { go('#/wealth', '#newa'); }
+    else if (k === 'purchase') purchaseForm(); else if (k === 'expense') go('#/expenses', '#new'); else if (k === 'scan') go('#/expenses', '#scan');
+    else if (k === 'spending') location.hash = '#/spending'; else if (k === 'loan') loanForm(); else if (k === 'goal') { go('#/wealth', '#newg'); } else if (k === 'account') { go('#/wealth', '#newa'); }
   }
   function moreSheet() {
     var items = '<button type="button" class="mrow" data-act="search" style="text-align:left;background:none;font:inherit;grid-column:1/-1">🔍 Search</button>' + Array.prototype.map.call(document.querySelectorAll('#nav a'), function (a) { return '<a href="' + a.getAttribute('href') + '" class="mrow">' + a.innerHTML + '</a>'; }).join('');
@@ -222,7 +222,7 @@
   }
   function quickSheet() {
     var b = function (k, t, d) { return '<button type="button" class="qa" data-qa="' + k + '"><b>' + t + '</b><span>' + d + '</span></button>'; };
-    dlg.innerHTML = '<form method="dialog"><h2>Add something</h2><div class="qgrid">' + b('bill', '🧾 Bill', 'Electricity, water, gas, internet…') + b('scan', '📷 Receipt', 'Photo → expense, automatic') + b('expense', '💸 Expense', 'Type it in') + b('income', '💰 Income', 'Salary or other') + b('sub', '🔁 Subscription', 'Netflix, gym, IPTV…') + b('loan', '🏦 Loan', 'Mortgage, car, credit') + b('invoice', '📄 Invoice', 'Bill a client') + b('goal', '🎯 Savings goal', 'Holidays, emergency fund') + '</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
+    dlg.innerHTML = '<form method="dialog"><h2>Add something</h2><div class="qgrid">' + b('bill', '🧾 Bill', 'Electricity, water, gas, internet…') + b('purchase', '🛒 Purchase', 'Shopping, food, anything') + b('scan', '📷 Receipt', 'Photo → expense, automatic') + b('expense', '💸 Expense', 'Type it in') + b('income', '💰 Income', 'Salary or other') + b('sub', '🔁 Subscription', 'Netflix, gym, IPTV…') + b('loan', '🏦 Loan', 'Mortgage, car, credit') + b('invoice', '📄 Invoice', 'Bill a client') + b('goal', '🎯 Savings goal', 'Holidays, emergency fund') + b('spending', '📊 Save more', 'See where to cut') + '</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
     dlg.onclose = null; dlg.showModal(); dlg.querySelectorAll('[data-qa]').forEach(function (b2) { b2.onclick = function () { quickAdd(b2.dataset.qa); }; });
   }
   function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone; }
@@ -235,6 +235,87 @@
     var t = e.target.closest('[data-act]'); if (!t) return; var a = t.dataset.act;
     if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp();
   });
+
+
+  /* ---------- spending by month, by category, with a savings planner ---------- */
+  var GRP = { bill: 'var(--c2)', sub: 'var(--c3)', loan: 'var(--c1)', buy: 'var(--c4)' };
+  var spendMonth = null, picked = {}, openCat = null;
+  function shiftMonth(k, n) { var d = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function monthName(k) { return new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' }); }
+  function monthData(k) {
+    var ppl = Math.max(1, +db.settings.people || 1), cats = {}, total = 0, now = today().slice(0, 7);
+    function add(label, grp, item) { var c = cats[label] || (cats[label] = { label: label, grp: grp, amt: 0, items: [] }); c.amt += item.a; c.items.push(item); total += item.a; }
+    db.bills.forEach(function (b) { if ((b.date || '').slice(0, 7) === k) add((BT[b.type] || { l: 'Other bills' }).l, 'bill', { t: (BT[b.type] || { l: 'Bill' }).l + (b.provider ? ' · ' + b.provider : ''), d: b.date, a: b.amount / ppl, href: '#/bills' }); });
+    if (k <= now) {
+      db.subs.forEach(function (x) { if (x.active !== false && mineM(x) > 0) add('Subscriptions', 'sub', { t: x.name, d: null, a: mineM(x), href: '#/subs', sub: SC[x.cat] || '' }); });
+      db.loans.forEach(function (L) { var i = loanInfo(L); if (!i.done) add('Loans', 'loan', { t: L.name || 'Loan', d: null, a: i.pay, href: '#/loans' }); });
+    }
+    db.expenses.forEach(function (e) { if ((e.date || '').slice(0, 7) === k) add(e.cat || 'Other', 'buy', { t: e.vendor || e.note || 'Purchase', d: e.date, a: num(e.amount), href: '#/expenses' }); });
+    return { cats: cats, total: total };
+  }
+  function pctD(a, b) { return b > 0.5 ? (a - b) / b * 100 : null; }
+  var RATES = { 'Food & drinks': .25, Shopping: .2, Entertainment: .25, Travel: .2, Gifts: .2, Other: .15, Home: .1, Groceries: .08, Fuel: .06 };
+  function savingIdeas() {
+    var ideas = [], ppl = Math.max(1, +db.settings.people || 1), k0 = today().slice(0, 7), by = {};
+    var act = db.subs.filter(function (x) { return x.active !== false && mineM(x) > 0; });
+    act.forEach(function (x) { (by[x.cat] = by[x.cat] || []).push(x); });
+    act.forEach(function (x) {
+      var tags = [], h = x.history || [];
+      if (x.trial) tags.push('free trial about to renew'); if (h.length > 1 && h[h.length - 1].a > h[h.length - 2].a) tags.push('price went up');
+      if (by[x.cat].length > 1 && /^(streaming|iptv|music)$/.test(x.cat)) tags.push('you have ' + by[x.cat].length + ' in this group');
+      ideas.push({ id: 's' + x.id, cat: 'Subscriptions', title: 'Cancel ' + x.name, save: mineM(x), why: tags.length ? tags.join(' · ') : 'Still using it?', prio: tags.length ? 1 : 2 });
+    });
+    Object.keys(BT).forEach(function (t) {
+      var l = byType(t); if (l.length < 3) return; var last = l[l.length - 1].amount / ppl, pr = l.slice(Math.max(0, l.length - 7), l.length - 1), avg = pr.reduce(function (a, b) { return a + b.amount; }, 0) / pr.length / ppl;
+      if (last - avg > 2) ideas.push({ id: 'b' + t, cat: BT[t].l, title: 'Bring ' + BT[t].l.toLowerCase() + ' back to your usual', save: last - avg, why: 'Last bill ' + money(last) + ' vs usual ' + money(avg), prio: 1 });
+    });
+    var avg = {}; for (var m = 1; m <= 3; m++) { var d = monthData(shiftMonth(k0, -m)); Object.keys(d.cats).forEach(function (c) { if (d.cats[c].grp === 'buy') avg[c] = (avg[c] || 0) + d.cats[c].amt / 3; }); }
+    Object.keys(avg).forEach(function (c) { var r = RATES[c]; if (r && avg[c] > 10) ideas.push({ id: 'v' + c, cat: c, title: 'Spend ' + Math.round(r * 100) + '% less on ' + c.toLowerCase(), save: avg[c] * r, why: 'You usually spend about ' + money(avg[c]) + ' a month', prio: 3 }); });
+    return ideas.sort(function (a, b) { return a.prio - b.prio || b.save - a.save; });
+  }
+  function autoPick(ideas, target) { picked = {}; var sum = 0; ideas.forEach(function (i) { if (sum < target) { picked[i.id] = true; sum += i.save; } }); }
+  function purchaseForm(pre) {
+    var vend = {}; db.expenses.forEach(function (e) { if (e.vendor) vend[e.vendor.toLowerCase()] = e.cat; });
+    var names = Object.keys(db.expenses.reduce(function (o, e) { if (e.vendor) o[e.vendor] = 1; return o; }, {}));
+    ask('<h2>Add a purchase</h2><datalist id="vend">' + names.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist><div class="f">' + field('Amount', 'amount', '', 'text', 'inputmode="decimal" required autofocus') + field('Where?', 'vendor', '', 'text', 'list="vend" placeholder="Supermarket, pharmacy…"') +
+      '<div><label>Category</label><select name="cat">' + CATS.map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></div>' + field('Date', 'date', today(), 'date') + '</div><p class="mut" style="font-size:12px;margin:8px 0 0">Next time you pick the same shop, the category is filled in for you.</p>', function (d) {
+      var a = num(val(d, 'amount')); if (!(a > 0)) { toast('Enter the amount'); return; }
+      db.expenses.push({ id: uid(), date: val(d, 'date') || today(), vendor: val(d, 'vendor'), cat: val(d, 'cat') || 'Other', amount: a, note: '' }); save(); toast('Purchase added'); route();
+    }, 'Add purchase');
+    var v = dlg.querySelector('[name=vendor]'), c = dlg.querySelector('[name=cat]'); if (v) v.oninput = v.onchange = function () { var k = vend[v.value.trim().toLowerCase()]; if (k) c.value = k; else { var g = guessCat(v.value); if (g && CATS.indexOf(g) > -1) c.value = g; } };
+  }
+  function spending() {
+    var k = spendMonth || today().slice(0, 7), cur = monthData(k), prev = monthData(shiftMonth(k, -1)), rows = Object.keys(cur.cats).map(function (c) { return cur.cats[c]; }).sort(function (a, b) { return b.amt - a.amt; });
+    var dT = pctD(cur.total, prev.total), max = rows.length ? rows[0].amt : 1, grpT = { bill: 0, sub: 0, loan: 0, buy: 0 }; rows.forEach(function (r) { grpT[r.grp] += r.amt; });
+    var GN = { bill: 'Home bills', sub: 'Subscriptions', loan: 'Loans', buy: 'Purchases' };
+    var h = '<div class="top"><h1>Spending</h1><div class="row"><button class="btn" id="pm" aria-label="Previous month">‹</button><b style="min-width:130px;text-align:center;text-transform:capitalize">' + monthName(k) + '</b><button class="btn" id="nm" aria-label="Next month">›</button><button class="btn p" id="newp">+ Purchase</button></div></div>';
+    h += '<div class="grid g4"><div class="card kpi"><small>Spent in ' + monthName(k) + '</small><b>' + money(cur.total) + '</b>' + (dT != null ? '<small class="' + (dT > 0 ? 'neg' : 'pos') + '">' + (dT > 0 ? '▲ ' : '▼ ') + Math.abs(Math.round(dT)) + '% vs ' + monthName(shiftMonth(k, -1)) + '</small>' : '') + '</div>' +
+      Object.keys(grpT).filter(function (g) { return grpT[g] > 0; }).map(function (g) { return '<div class="card kpi"><small><i class="dot" style="background:' + GRP[g] + '"></i>' + GN[g] + '</small><b>' + money(grpT[g]) + '</b><small>' + Math.round(grpT[g] / (cur.total || 1) * 100) + '% of the month</small></div>'; }).join('') + '</div>';
+    h += '<div class="card" style="margin-top:14px"><h2>By category</h2>' + (rows.length ? rows.map(function (r) {
+      var pv = prev.cats[r.label] ? prev.cats[r.label].amt : 0, dd = pctD(r.amt, pv), items = r.items.slice().sort(function (a, b) { return b.a - a.a; });
+      return '<details class="cat" data-cat="' + esc(r.label) + '"' + (openCat === r.label ? ' open' : '') + '><summary><i class="dot" style="background:' + GRP[r.grp] + '"></i><span class="cn">' + esc(r.label) + '</span><span class="cb"><i style="width:' + Math.max(3, r.amt / max * 100) + '%;background:' + GRP[r.grp] + '"></i></span><b>' + money(r.amt) + '</b><em class="' + (dd == null ? '' : dd > 0 ? 'neg' : 'pos') + '">' + (dd == null ? (pv ? '' : 'new') : Math.abs(dd) < 1 ? '—' : (dd > 0 ? '▲' : '▼') + Math.abs(Math.round(dd)) + '%') + '</em></summary>' +
+        '<table><tbody>' + items.map(function (i) { return '<tr><td>' + esc(i.t) + (i.sub ? ' <span class="tag">' + esc(i.sub) + '</span>' : '') + '</td><td class="mut">' + (i.d ? fdate(i.d) : 'every month') + '</td><td class="r"><b>' + money(i.a) + '</b></td></tr>'; }).join('') + '</tbody></table><p class="mut" style="margin:6px 10px 10px;font-size:12px">' + items.length + ' item' + (items.length > 1 ? 's' : '') + ' · average ' + money(r.amt / items.length) + ' · <a href="' + items[0].href + '">open in ' + (r.grp === 'buy' ? 'expenses' : r.grp === 'bill' ? 'utilities' : r.grp === 'sub' ? 'subscriptions' : 'loans') + '</a></p></details>';
+    }).join('') : '<div class="empty">Nothing recorded for this month yet. Add a purchase, a bill or a subscription.</div>') + '</div>';
+    var T = +db.settings.saveTarget || 0, ideas = savingIdeas();
+    if (T && !Object.keys(picked).length) autoPick(ideas, T);
+    h += '<div class="card" style="margin-top:14px"><h2>🎯 Save more</h2><p class="mut" style="margin-top:-6px">How much would you like to save each month? Ledgerly looks at your subscriptions, bills and purchases and shows where to cut.</p><div class="row" style="margin-bottom:12px"><input id="tgt" inputmode="decimal" style="width:130px" placeholder="€ per month" value="' + (T || '') + '"><button class="btn p" id="plan">Find savings</button>' + [50, 100, 200].map(function (v) { return '<button class="btn s" data-t="' + v + '">' + money(v) + '</button>'; }).join('') + '</div><div id="planbox"></div></div>';
+    view.innerHTML = h;
+    function drawPlan() {
+      var T2 = +db.settings.saveTarget || 0, box = $('#planbox'); if (!T2) { box.innerHTML = ''; return; }
+      var sum = ideas.reduce(function (a, i) { return a + (picked[i.id] ? i.save : 0); }, 0), all = ideas.reduce(function (a, i) { return a + i.save; }, 0), pc = Math.min(100, sum / T2 * 100);
+      box.innerHTML = '<div class="plan"><div class="pbar"><i style="width:' + pc + '%"></i></div><p><b>' + money(sum) + '</b> <span>of</span> ' + money(T2) + ' <span>a month</span> ' + (sum >= T2 ? '✅ <span>— that is</span> ' + money(sum * 12) + ' <span>a year.</span>' : '<span>selected.</span>') + '</p>' + (all < T2 ? '<p class="mut">Everything we found adds up to ' + money(all) + ' a month. To reach ' + money(T2) + ' you would also need to earn more or cut something bigger, such as a loan or rent.</p>' : '') +
+        (ideas.length ? ideas.map(function (i) { return '<label class="idea"><input type="checkbox" data-id="' + esc(i.id) + '" ' + (picked[i.id] ? 'checked' : '') + '><span><b>' + esc(i.title) + '</b><small>' + esc(i.why) + '</small></span><b class="sv">' + money(i.save) + '</b><a href="#" data-see="' + esc(i.cat) + '">see</a></label>'; }).join('') : '<p class="mut">No ideas yet — add some bills, subscriptions or purchases first.</p>') + '</div>';
+      box.querySelectorAll('[data-id]').forEach(function (cb) { cb.onchange = function () { picked[cb.dataset.id] = cb.checked; drawPlan(); }; });
+      box.querySelectorAll('[data-see]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); openCat = a.dataset.see; var d = view.querySelector('details[data-cat="' + a.dataset.see.replace(/"/g, '') + '"]'); if (d) { d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'center' }); } else toast('Not in this month — pick a month with ' + a.dataset.see); }; });
+    }
+    function setT(v) { db.settings.saveTarget = v; save(); picked = {}; autoPick(ideas, v); $('#tgt').value = v || ''; drawPlan(); }
+    $('#plan').onclick = function () { var v = num($('#tgt').value); if (!(v > 0)) { toast('Enter an amount to save each month'); return; } setT(v); };
+    $('#tgt').onkeydown = function (e) { if (e.key === 'Enter') $('#plan').click(); };
+    view.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { setT(+b.dataset.t); }; });
+    $('#pm').onclick = function () { spendMonth = shiftMonth(k, -1); spending(); }; $('#nm').onclick = function () { spendMonth = shiftMonth(k, 1); spending(); }; $('#newp').onclick = function () { purchaseForm(); };
+    view.querySelectorAll('details.cat').forEach(function (d) { d.ontoggle = function () { if (d.open) openCat = d.dataset.cat; }; });
+    drawPlan();
+  }
 
   function invTable(list) {
     return '<table><thead><tr><th>Number</th><th>Client</th><th>Issued</th><th>Due</th><th>Status</th><th class="r">Total</th></tr></thead><tbody>' + list.map(function (i) {
@@ -360,7 +441,7 @@
     draw();
   }
 
-  var CATS = ['Groceries', 'Food & drinks', 'Fuel', 'Health', 'Home', 'Software', 'Equipment', 'Travel', 'Office', 'Marketing', 'Taxes & fees', 'Services', 'Other'];
+  var CATS = ['Groceries', 'Food & drinks', 'Shopping', 'Entertainment', 'Gifts', 'Fuel', 'Health', 'Home', 'Software', 'Equipment', 'Travel', 'Office', 'Marketing', 'Taxes & fees', 'Services', 'Other'];
   function expenses() {
     var y = new Date().getFullYear();
     view.innerHTML = '<div class="top"><h1>Expenses</h1><div class="row"><label class="btn" style="margin:0">🏦 Import bank statement<input type="file" id="csvf" accept=".csv,.txt,text/csv" hidden></label><label class="btn" style="margin:0">📷 Scan receipts<input type="file" id="scan" accept="image/*,application/pdf" multiple hidden></label><button class="btn" id="bud">Budgets</button><button class="btn" id="exp">Export CSV</button><button class="btn p" id="new">+ New expense</button></div></div><div id="bw"></div><div class="card" id="c"></div>';

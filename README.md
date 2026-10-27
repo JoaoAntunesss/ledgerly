@@ -60,7 +60,12 @@ No build step. Logic can be exercised in a browser with Playwright (see the comm
 ## License
 MIT
 
+## Spending & saving
+See every month by category (bills, subscriptions, loans, purchases), compare with the previous month, add purchases in seconds (the category is remembered per shop) and tell Ledgerly how much you want to save — it suggests where to cut.
+
 ## On your phone & with Google
 Installable on Android and iPhone, sign in with Google to keep phone and computer in sync (end-to-end encrypted). See [docs/MOBILE.md](docs/MOBILE.md).
+
+![Spending](docs/spending.png)
 
 ![Mobile](docs/mobile.png)

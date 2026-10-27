@@ -129,3 +129,17 @@ dialog[open]{animation:dlgin .24s cubic-bezier(.2,.8,.2,1)}dialog::backdrop{anim
 #fab{animation:pop .5s .3s cubic-bezier(.3,1.5,.5,1) both}
 #toast{transition:opacity .25s,transform .25s}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---- spending page ---- */
+.dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+.neg{color:var(--bad)}.pos{color:var(--ok)}
+details.cat{border-top:1px solid var(--line)}details.cat:first-of-type{border-top:0}
+details.cat summary{display:grid;grid-template-columns:auto minmax(90px,1.2fr) 2fr auto 52px;align-items:center;gap:10px;padding:12px 4px;cursor:pointer;list-style:none}
+details.cat summary::-webkit-details-marker{display:none}details.cat summary:hover{background:var(--acc2);border-radius:10px}
+details.cat .dot{margin:0}.cb{height:8px;background:var(--bg);border-radius:99px;overflow:hidden}.cb i{display:block;height:100%;border-radius:99px;transition:width .6s}
+details.cat summary em{font-style:normal;font-size:12px;text-align:right;color:var(--mut)}details.cat summary em.neg{color:var(--bad)}details.cat summary em.pos{color:var(--ok)}
+details.cat[open] summary{background:var(--acc2);border-radius:10px}
+.pbar{height:12px;background:var(--bg);border-radius:99px;overflow:hidden;margin-bottom:8px}.pbar i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.idea{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);margin:0;font-weight:400;cursor:pointer}
+.idea input{width:18px;height:18px;accent-color:var(--acc)}.idea small{display:block;color:var(--mut)}.idea .sv{font-family:var(--fd)}
+@media(max-width:600px){details.cat summary{grid-template-columns:auto 1fr auto 46px}.cb{display:none}.idea{grid-template-columns:auto 1fr auto}.idea a{display:none}}
