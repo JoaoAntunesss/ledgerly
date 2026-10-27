@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "users": { "$uid": { ".read": "auth.uid === $uid", ".write": "auth.uid === $uid" } },
+    "households": { "$hid": { ".read": "auth != null", ".write": "auth != null" } }
+  }
+}

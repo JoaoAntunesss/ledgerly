@@ -1231,6 +1231,12 @@
       return;
     }
     var b = $('#glogin'); if (!b) return;
+    // Hosted on Firebase Hosting? Then the project's config is served at /__/firebase/init.json — no copy/paste needed.
+    fetch('__/firebase/init.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.apiKey || !j.projectId) return; var url = j.databaseURL || ('https://' + j.projectId + '-default-rtdb.firebaseio.com');
+      [['gkey', j.apiKey], ['gproj', j.projectId], ['gurl', url]].forEach(function (p) { var e = $('[name=' + p[0] + ']'); if (e) { e.value = p[1]; var w = e.closest('div'); if (w) w.hidden = true; } });
+      var n = document.createElement('p'); n.className = 'mut'; n.style.fontSize = '13px'; n.textContent = '✅ This app is hosted on your Firebase project, so it is already connected. Just choose an encryption password.'; b.parentNode.parentNode.insertBefore(n, b.parentNode);
+    }).catch(function () { });
     b.onclick = function () {
       var key = $('[name=gkey]').value.trim(), proj = $('[name=gproj]').value.trim(), url = $('[name=gurl]').value.trim(), pass = $('[name=gpass]').value;
       if (!key || !proj || !/^https:\/\//.test(url) || pass.length < 6) { toast('Fill in all four fields (password: at least 6 characters)'); return; }

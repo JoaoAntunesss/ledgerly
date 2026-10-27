@@ -22,5 +22,12 @@ Settings → **Sign in with Google**. One-time Firebase setup (free Spark plan):
    ```
 4. Paste the Web API key, project ID, database URL and a password of your choice into Settings. Use the same password on every device. Data is encrypted before upload.
 
+## Hosting on Firebase instead of GitHub Pages (recommended with Google sign-in)
+Everything lives in one project and the domain is authorised automatically.
+1. `npm i -g firebase-tools`, then `firebase login`.
+2. In this folder: `firebase use --add` and pick your project (or `firebase init hosting` and keep the existing files).
+3. `firebase deploy` — publishes the site (`https://<project>.web.app`) and the database rules from `database.rules.json`.
+4. Open the site → Settings → *Sign in with Google*: the Firebase config is filled in for you, just choose the encryption password.
+
 ## Real store app (optional)
 Wrap the hosted PWA: **PWABuilder.com** (Android package / Microsoft Store), or Bubblewrap / Capacitor for Play Store and App Store.
