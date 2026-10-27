@@ -858,6 +858,22 @@
     { id: 'lavender', n: 'Lavender', e: '💜', l: { bg: '#f4f0fa', card: '#ffffff', text: '#251a3a', acc: '#6b46c1', h1: '#3b2a6b', h2: '#8b6bd6' }, d: { bg: '#130f1d', card: '#1c1630', text: '#eee8fa', acc: '#b79cff', h1: '#2a1f55', h2: '#5a3fb0' } },
     { id: 'sakura', n: 'Sakura', e: '🌸', deco: ['🌸', '🌸', '🌷'], mode: 'fall', l: { bg: '#fdf1f4', card: '#fffafb', text: '#3a1a26', acc: '#c2456b', h1: '#7a2a45', h2: '#e07a9a' }, d: { bg: '#1a0f13', card: '#25161b', text: '#f8e8ee', acc: '#ff8fb0', h1: '#4a1a2c', h2: '#a8456a' } },
     { id: 'toys', n: 'Cartoon', e: '🧸', style: 'chunky', deco: ['🐻', '🐼', '🦊', '🐰', '🐸', '🐱'], mode: 'rise', l: { bg: '#fff3c4', card: '#ffffff', text: '#2b2250', acc: '#e0386f', h1: '#5b4bd6', h2: '#ff7ab6' }, d: { bg: '#1b1636', card: '#262050', text: '#fff1c9', acc: '#ff7ab6', h1: '#3a2f90', h2: '#c2408a' } },
+    { id: 'neotokyo', n: 'Neon Tokyo', e: '🌃', deco: ['🌸', '✨', '🏮'], mode: 'fall', dark: true, l: { bg: '#0c0a1c', card: '#151230', text: '#f1ecff', acc: '#ff4fa3', h1: '#2a0e5a', h2: '#00b8e6' } },
+{ id: 'kawaii', n: 'Kawaii', e: '🍡', deco: ['🍡', '🌸', '⭐', '🐰', '☁️', '🍓'], mode: 'rise', style: 'chunky', l: { bg: '#fff1f8', card: '#fffafd', text: '#4a2a48', acc: '#d63f8a', h1: '#ff8ac2', h2: '#a78bfa' } },
+{ id: 'shonen', n: 'Shōnen sunset', e: '🔥', deco: ['⚡', '🔥', '💥'], mode: 'rise', style: 'chunky', l: { bg: '#fff4e6', card: '#fffdf9', text: '#1f1a2e', acc: '#d9480f', h1: '#1c2a6b', h2: '#ff7a1a' } },
+{ id: 'spirit', n: 'Spirit forest', e: '🍃', deco: ['🍃', '🌿', '✨', '🌱'], mode: 'fall', l: { bg: '#eef4e6', card: '#fbfdf7', text: '#22301f', acc: '#4a7c3a', h1: '#2d5a3d', h2: '#8fc07a' } },
+{ id: 'ramen', n: 'Ramen night', e: '🍜', deco: ['🍜', '🥢', '🏮', '🍥'], mode: 'rise', dark: true, l: { bg: '#1a0f0c', card: '#26160f', text: '#fbeee0', acc: '#ff6a3d', h1: '#5a1409', h2: '#d9531e' } },
+{ id: 'sky', n: 'Sky', e: '☁️', deco: ['☁️', '☁️', '🕊️'], mode: 'rise', l: { bg: '#eaf4ff', card: '#ffffff', text: '#14304d', acc: '#2f7de1', h1: '#2f6fd6', h2: '#7ec8ff' } },
+{ id: 'retro', n: 'Retro arcade', e: '🕹️', deco: ['👾', '🕹️', '⭐'], mode: 'twinkle', style: 'chunky', dark: true, l: { bg: '#120a22', card: '#1c1236', text: '#e8ffe8', acc: '#39ff88', h1: '#3b0f6b', h2: '#ff2d95' } },
+{ id: 'azulejo', n: 'Azulejo', e: '🔷', l: { bg: '#f4f7fb', card: '#ffffff', text: '#0f2a5a', acc: '#1d4fa8', h1: '#123a85', h2: '#4f86d6' } },
+{ id: 'portugal', n: 'Portugal', e: '⚽', deco: ['⚽', '🏆'], mode: 'rise', l: { bg: '#f8f3ec', card: '#fffdf9', text: '#2a1a1a', acc: '#b3121f', h1: '#0b6b3a', h2: '#c4161c' } },
+{ id: 'valentine', n: 'Valentine', e: '💘', deco: ['💘', '💗', '🌹'], mode: 'rise', l: { bg: '#fff0f2', card: '#fffafb', text: '#3d1020', acc: '#d0204f', h1: '#8c1236', h2: '#ff6b8b' } },
+{ id: 'autumn', n: 'Autumn', e: '🍂', deco: ['🍂', '🍁', '🍂'], mode: 'fall', l: { bg: '#f8efe2', card: '#fffaf2', text: '#33200f', acc: '#b5461a', h1: '#6b2c0f', h2: '#d98b2b' } },
+{ id: 'summer', n: 'Summer', e: '🏖️', deco: ['☀️', '🌴', '🍉'], mode: 'rise', l: { bg: '#fff8e5', card: '#fffdf5', text: '#17323a', acc: '#0a8f8f', h1: '#ff9d2e', h2: '#17a6a6' } },
+{ id: 'space', n: 'Space', e: '🚀', deco: ['✨', '🪐', '🚀', '⭐'], mode: 'twinkle', dark: true, l: { bg: '#070816', card: '#0f1128', text: '#e6e9ff', acc: '#a78bfa', h1: '#1a1050', h2: '#5b2ea6' } },
+{ id: 'matcha', n: 'Matcha', e: '🍵', deco: ['🍵', '🍃'], mode: 'fall', l: { bg: '#f1f4e6', card: '#fbfcf5', text: '#26301a', acc: '#5d7a2a', h1: '#3f5a1c', h2: '#9bb560' } },
+{ id: 'coffee', n: 'Coffee', e: '☕', deco: ['☕', '🫘'], mode: 'rise', l: { bg: '#efe6dc', card: '#faf5ee', text: '#2d1e14', acc: '#6f4a2d', h1: '#3a2415', h2: '#7a5233' } },
+{ id: 'newyear', n: 'New Year', e: '🎆', deco: ['🎆', '✨', '🥂', '🎉'], mode: 'rise', dark: true, l: { bg: '#0e0d14', card: '#17151f', text: '#f7efd9', acc: '#f2c14e', h1: '#1a1630', h2: '#7a5c10' } },
     { id: 'midnight', n: 'Midnight', e: '🌙', deco: ['✨', '⭐'], mode: 'twinkle', dark: true, l: { bg: '#0f1220', card: '#171b30', text: '#e9ecfa', acc: '#8fa8ff', h1: '#1b2150', h2: '#3b4bb0' }, d: { bg: '#0f1220', card: '#171b30', text: '#e9ecfa', acc: '#8fa8ff', h1: '#1b2150', h2: '#3b4bb0' } }
   ];
   var hx = function (h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
@@ -870,6 +886,8 @@
     else { o['--ok'] = '#2f7d4f'; o['--okb'] = '#e4f2e8'; o['--warn'] = '#a85a05'; o['--warnb'] = '#fff1e0'; o['--bad'] = '#b3372b'; o['--badb'] = '#fbe5e0'; o['--c1'] = '#3556c9'; o['--c2'] = '#b87400'; o['--c3'] = '#9333b8'; o['--c4'] = '#0f8a63'; }
     return o;
   }
+  function deriveDark(l) { return { bg: mixc('#101010', l.acc, .1), card: mixc('#171717', l.acc, .14), text: '#f2eadf', acc: mixc(l.acc, '#ffffff', .4), h1: mixc(l.h1, '#000000', .35), h2: mixc(l.h2, '#000000', .25) }; }
+  var GROUPS = [['Everyday', ['caramel', 'forest', 'ocean', 'lavender', 'matcha', 'coffee', 'azulejo', 'sky']], ['Anime-inspired', ['neotokyo', 'kawaii', 'shonen', 'spirit', 'ramen', 'retro']], ['Seasons & occasions', ['christmas', 'halloween', 'sakura', 'valentine', 'autumn', 'summer', 'newyear', 'portugal']], ['Fun & night', ['toys', 'midnight', 'space']]];
   function customTheme() {
     var c = Object.assign({ acc: '#a65f1e', bg: '#f7f0e6', h1: '#4a2f1c', h2: '#9c5f2a' }, db.settings.custom || {});
     var l = { bg: c.bg, card: mixc(c.bg, '#ffffff', .7), text: mixc('#1c1510', c.acc, .12), acc: c.acc, h1: c.h1, h2: c.h2 };
@@ -878,7 +896,7 @@
   }
   function curTheme() { var id = db.settings.theme || 'caramel'; if (id === 'custom') return customTheme(); return THEMES.filter(function (t) { return t.id === id; })[0] || THEMES[0]; }
   function applyTheme() {
-    var T = curTheme(), sch = db.settings.scheme || 'auto'; if (T.dark) sch = 'dark';
+    var T = curTheme(), sch = db.settings.scheme || 'auto'; if (T.dark) sch = 'dark'; if (!T.d) T.d = deriveDark(T.l);
     var css = function (o) { return Object.keys(o).map(function (k) { return k + ':' + o[k]; }).join(';'); }, L = css(buildVars(T.l, false)), D = css(buildVars(T.d, true)), out;
     out = sch === 'light' ? 'html[data-t]{' + L + '}' : sch === 'dark' ? 'html[data-t]{' + D + '}' : 'html[data-t]{' + L + '}@media (prefers-color-scheme:dark){html[data-t]{' + D + '}}';
     var st = document.getElementById('thm'); if (!st) { st = document.createElement('style'); st.id = 'thm'; document.head.appendChild(st); } st.textContent = out;
@@ -895,7 +913,8 @@
   }
   function themePickerHtml() {
     var cur = db.settings.theme || 'caramel', c = Object.assign({ acc: '#a65f1e', bg: '#f7f0e6', h1: '#4a2f1c', h2: '#9c5f2a' }, db.settings.custom || {}), all = THEMES.concat([customTheme()]);
-    return '<div class="tiles">' + all.map(function (t) { return '<button type="button" class="tile' + (cur === t.id ? ' on' : '') + '" data-th="' + t.id + '"><span class="sw" style="background:linear-gradient(135deg,' + t.l.h1 + ',' + t.l.h2 + ')"><i style="background:' + t.l.acc + '"></i><i style="background:' + t.l.bg + '"></i></span><b>' + t.e + ' ' + t.n + '</b></button>'; }).join('') + '</div>' +
+    var byId = {}; all.forEach(function (t) { byId[t.id] = t; }); return GROUPS.map(function (g) { return '<p class="tg">' + g[0] + '</p><div class="tiles">' + g[1].map(function (id) { return byId[id]; }).filter(Boolean).map(function (t) { return '<button type="button" class="tile' + (cur === t.id ? ' on' : '') + '" data-th="' + t.id + '"><span class="sw" style="background:linear-gradient(135deg,' + t.l.h1 + ',' + t.l.h2 + ')"><i style="background:' + t.l.acc + '"></i><i style="background:' + t.l.bg + '"></i></span><b>' + t.e + ' ' + t.n + '</b></button>'; }).join('') + '</div>'; }).join('') + '<p class="tg">Your own</p><div class="tiles">' + [byId.custom].map(function (t) { return '<button type="button" class="tile' + (cur === t.id ? ' on' : '') + '" data-th="' + t.id + '"><span class="sw" style="background:linear-gradient(135deg,' + t.l.h1 + ',' + t.l.h2 + ')"><i style="background:' + t.l.acc + '"></i><i style="background:' + t.l.bg + '"></i></span><b>' + t.e + ' ' + t.n + '</b></button>'; }).join('') + '</div>'
+      +
       (cur === 'custom' ? '<div class="f" style="margin-top:12px"><div><label>Main colour</label><input type="color" data-cc="acc" value="' + c.acc + '"></div><div><label>Background</label><input type="color" data-cc="bg" value="' + c.bg + '"></div><div><label>Header colour 1</label><input type="color" data-cc="h1" value="' + c.h1 + '"></div><div><label>Header colour 2</label><input type="color" data-cc="h2" value="' + c.h2 + '"></div></div>' : '') +
       '<div class="f" style="margin-top:12px"><div><label>Light or dark</label><select data-sch><option value="auto" ' + ((db.settings.scheme || 'auto') === 'auto' ? 'selected' : '') + '>Follow my device</option><option value="light" ' + (db.settings.scheme === 'light' ? 'selected' : '') + '>Always light</option><option value="dark" ' + (db.settings.scheme === 'dark' ? 'selected' : '') + '>Always dark</option></select></div><div><label>Little decorations (snow, petals, friends…)</label><select data-deco><option value="1" ' + (db.settings.deco !== false ? 'selected' : '') + '>On</option><option value="0" ' + (db.settings.deco === false ? 'selected' : '') + '>Off</option></select></div></div>';
   }

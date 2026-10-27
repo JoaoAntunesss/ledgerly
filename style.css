@@ -152,7 +152,7 @@ details.cat[open] summary{background:var(--acc2);border-radius:10px}
 .tile:hover{transform:translateY(-2px)}.tile.on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
 .tile .sw{display:flex;align-items:flex-end;gap:5px;width:100%;height:46px;border-radius:9px;padding:6px}.tile .sw i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.8)}
 input[type=color]{width:100%;height:42px;padding:3px;border-radius:10px;cursor:pointer}
-#deco{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:45}#deco span{position:absolute;top:0;opacity:.7;will-change:transform}
+#deco{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:45}#deco span{position:absolute;top:0;opacity:.55;will-change:transform}
 @keyframes dfall{from{transform:translate3d(0,-8vh,0) rotate(0)}to{transform:translate3d(40px,108vh,0) rotate(300deg)}}
 @keyframes drise{from{transform:translate3d(0,108vh,0) rotate(-12deg)}50%{transform:translate3d(30px,50vh,0) rotate(12deg)}to{transform:translate3d(-10px,-10vh,0) rotate(-12deg)}}
 @keyframes dtwinkle{0%,100%{transform:translate3d(0,20vh,0) scale(.6);opacity:.2}50%{transform:translate3d(10px,20vh,0) scale(1.2);opacity:.9}}
@@ -160,3 +160,7 @@ html[data-style=chunky] .card,html[data-style=chunky] .chip,html[data-style=chun
 html[data-style=chunky] .card{box-shadow:4px 5px 0 var(--text);border-radius:20px}html[data-style=chunky] .btn:active{transform:translate(2px,3px)}
 html[data-style=chunky] .hero{box-shadow:5px 6px 0 var(--text)}html[data-style=chunky] h1,html[data-style=chunky] h2{letter-spacing:0}
 @media print{#deco{display:none!important}}
+
+.tg{margin:14px 0 6px;font:650 13px var(--fd);color:var(--mut)}.tg:first-child{margin-top:0}
+dialog{max-height:92vh;overflow:auto}
+html[data-style=chunky] .tile.on{box-shadow:3px 4px 0 var(--acc)}

@@ -61,7 +61,7 @@ No build step. Logic can be exercised in a browser with Playwright (see the comm
 MIT
 
 ## Themes
-Nine ready-made looks (Caramel, Forest, Christmas, Halloween, Ocean, Lavender, Sakura, Cartoon, Midnight) or pick your own colours, light/dark mode and optional little decorations (snow, petals, bubbles, friendly animals).
+Twenty-five ready-made looks in four groups — everyday (Caramel, Forest, Ocean…), anime-inspired (Neon Tokyo, Kawaii, Shōnen sunset, Spirit forest, Ramen night, Retro arcade), seasons & occasions (Christmas, Halloween, Sakura, Valentine, Autumn, Summer, New Year, Portugal) and fun & night (Cartoon, Midnight, Space) — or pick your own colours, light/dark mode and optional little decorations (snow, petals, bubbles, friendly animals).
 
 ## Spending & saving
 See every month by category (bills, subscriptions, loans, purchases), compare with the previous month, add purchases in seconds (the category is remembered per shop) and tell Ledgerly how much you want to save — it suggests where to cut.
