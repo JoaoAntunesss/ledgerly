@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledgerly — invoices & expenses</title>
+<meta name="description" content="Local-first invoicing and expense tracking. No account, no server: your data stays in your browser.">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f5bea">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <nav id="nav">
+    <div class="logo"><span>L</span>edgerly</div>
+    <a href="#/" data-r="dashboard">🏠 Home</a>
+    <small class="sec g-home">Home & family</small>
+    <a class="g-home" href="#/bills" data-r="bills">🧾 Utilities</a>
+    <a class="g-home" href="#/subs" data-r="subs">🔁 Subscriptions</a>
+    <a class="g-home" href="#/income" data-r="income">💰 Income</a>
+    <a class="g-home" href="#/loans" data-r="loans">🏦 Loans</a>
+    <a class="g-home" href="#/wealth" data-r="wealth">🎯 Wealth & goals</a>
+    <a class="g-home" href="#/split" data-r="split">🤝 Split expenses</a>
+    <a class="g-home" href="#/reminders" data-r="reminders">⏰ Warranties & deadlines</a>
+    <small class="sec g-work">Work</small>
+    <a class="g-work" href="#/invoices" data-r="invoices">📄 Invoices</a>
+    <a class="g-work" href="#/clients" data-r="clients">👥 Clients</a>
+    <a class="g-work" href="#/expenses" data-r="expenses">💸 Expenses</a>
+    <a class="g-work" href="#/vat" data-r="vat">📊 VAT report</a>
+    <small class="sec">&nbsp;</small>
+    <a href="#/settings" data-r="settings">⚙️ Settings</a>
+    <button class="btn s" data-act="lang" id="langbtn" style="margin:10px 10px 0">🌐 Português</button>
+    <button class="btn s" id="installbtn" data-act="install" hidden style="margin:10px 10px 0">📲 Install app</button>
+    <p class="note">Your data never leaves this browser. Back it up in Settings.</p>
+  </nav>
+  <main id="view"></main>
+</div>
+<dialog id="dlg"></dialog>
+<button id="fab" data-act="quick" aria-label="Add something">＋</button>
+<nav id="tabbar" aria-label="Main">
+  <a href="#/" data-r="dashboard"><i>🏠</i><span>Home</span></a>
+  <a href="#/bills" data-r="bills"><i>🧾</i><span>Bills</span></a>
+  <button data-act="quick" class="plus" aria-label="Add something">＋</button>
+  <a href="#/wealth" data-r="wealth"><i>💰</i><span>Money</span></a>
+  <button data-act="more"><i>☰</i><span>More</span></button>
+</nav>
+<div id="toast" role="status"></div>
+<script src="js/app.js"></script>
+<script src="js/i18n.js"></script>
+<script>if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) navigator.serviceWorker.register("sw.js").catch(function () {});</script>
+</body>
+</html>
