@@ -188,7 +188,7 @@
         (db.income.length ? '<div class="mut">' + money(o.inc) + ' in · ' + money(o.out) + ' out · you keep ' + (o.inc ? Math.round(Math.max(0, o.left) / o.inc * 100) : 0) + '%' + '</div>' + (o.left > 0 ? '<div class="perday"><span>≈</span><b>' + money(o.left / daysLeft()) + '</b><span>per day to spend, until month end</span></div>' : '') : '<div class="mut">Add your <a href="#/income">income</a> to see what is left each month.</div>') + '</div>' +
         '<div class="stack" role="img" aria-label="Where this month goes">' + parts.map(function (p) { return '<i style="flex:' + p.v + ';background:' + p.c + '" title="' + esc(p.l) + ' ' + money(p.v) + '"></i>'; }).join('') + '</div></div>';
       html += '<div style="margin-top:14px">' + warn + '</div>'; warn = ''; html += '<div class="grid g2" style="margin-top:14px"><div class="card"><h2 style="display:flex;justify-content:space-between">Where your money goes<a href="#/spending" style="font-size:13px;font-weight:600">Details →</a></h2><div class="dn">' + donut(parts, 'per month', money(o.out)) + '<div class="lg">' + parts.map(function (p) { return '<div><i style="background:' + p.c + '"></i><span>' + esc(p.l) + '</span><b>' + money(p.v) + '</b><em>' + Math.round(p.v / (o.out || 1) * 100) + '%</em></div>'; }).join('') + '</div></div></div>' +
-        '<div class="card"><h2>Last 6 months</h2><div class="bar" style="height:150px">' + flows.map(function (f) { return '<div><span class="bars"><i style="height:' + f.inc / fmax * 100 + '%" title="In ' + money(f.inc) + '"></i><i class="e" style="height:' + f.out / fmax * 100 + '%;background:var(--c2)" title="Out ' + money(f.out) + '"></i></span>' + f.label + '</div>'; }).join('') + '</div><div class="legend"><span><i style="background:var(--c4)"></i>Money in</span><span><i style="background:var(--c2)"></i>Money out</span></div></div></div>';
+        '<div class="card"><h2>Last 6 months</h2><div class="bar" style="height:150px">' + flows.map(function (f) { return '<div><span class="bars"><i style="background:var(--c4);height:' + f.inc / fmax * 100 + '%" title="In ' + money(f.inc) + '"></i><i class="e" style="height:' + f.out / fmax * 100 + '%;background:var(--c2)" title="Out ' + money(f.out) + '"></i></span>' + f.label + '</div>'; }).join('') + '</div><div class="legend"><span><i style="background:var(--c4)"></i>Money in</span><span><i style="background:var(--c2)"></i>Money out</span></div></div></div>';
     }
     html += warn;
     var nw = db.accounts.length ? netWorth() : null;
@@ -216,7 +216,7 @@
   }
   function moreSheet() {
     var items = '<button type="button" class="mrow" data-act="search" style="text-align:left;background:none;font:inherit;grid-column:1/-1">🔍 Search</button>' + Array.prototype.map.call(document.querySelectorAll('#nav a'), function (a) { return '<a href="' + a.getAttribute('href') + '" class="mrow">' + a.innerHTML + '</a>'; }).join('');
-    dlg.innerHTML = '<form method="dialog"><h2>All sections</h2><div class="mgrid">' + items + '</div>' + (window.__installEvt || isIOS() ? '<p style="margin-top:14px"><button type="button" class="btn p" id="inst" style="width:100%">📲 Install the app on this phone</button></p>' : '') + '<p style="margin-top:10px"><button type="button" class="btn" data-act="lang" style="width:100%">🌐 ' + (LOCALE ? 'English' : 'Português') + '</button></p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
+    dlg.innerHTML = '<form method="dialog"><h2>All sections</h2><div class="mgrid">' + items + '</div>' + (window.__installEvt || isIOS() ? '<p style="margin-top:14px"><button type="button" class="btn p" id="inst" style="width:100%">📲 Install the app on this phone</button></p>' : '') + '<p style="margin-top:10px"><button type="button" class="btn" data-act="theme" style="width:100%;margin-bottom:8px">🎨 Colours & themes</button><button type="button" class="btn" data-act="lang" style="width:100%">🌐 ' + (LOCALE ? 'English' : 'Português') + '</button></p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
     dlg.onclose = null; dlg.showModal(); dlg.querySelectorAll('a.mrow').forEach(function (a) { a.onclick = function () { dlg.close('x'); }; });
     var i = dlg.querySelector('#inst'); if (i) i.onclick = installApp;
   }
@@ -233,7 +233,7 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__installEvt = e; var b = $('#installbtn'); if (b) b.hidden = false; });
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]'); if (!t) return; var a = t.dataset.act;
-    if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp();
+    if (a === 'theme') themeSheet(); else if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp();
   });
 
 
@@ -278,11 +278,11 @@
     var vend = {}; db.expenses.forEach(function (e) { if (e.vendor) vend[e.vendor.toLowerCase()] = e.cat; });
     var names = Object.keys(db.expenses.reduce(function (o, e) { if (e.vendor) o[e.vendor] = 1; return o; }, {}));
     ask('<h2>Add a purchase</h2><datalist id="vend">' + names.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist><div class="f">' + field('Amount', 'amount', '', 'text', 'inputmode="decimal" required autofocus') + field('Where?', 'vendor', '', 'text', 'list="vend" placeholder="Supermarket, pharmacy…"') +
-      '<div><label>Category</label><select name="cat">' + CATS.map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></div>' + field('Date', 'date', today(), 'date') + '</div><p class="mut" style="font-size:12px;margin:8px 0 0">Next time you pick the same shop, the category is filled in for you.</p>', function (d) {
+      catSelect('Groceries') + field('Date', 'date', today(), 'date') + '</div><p class="mut" style="font-size:12px;margin:8px 0 0">Next time you pick the same shop, the category is filled in for you.</p>', function (d) {
       var a = num(val(d, 'amount')); if (!(a > 0)) { toast('Enter the amount'); return; }
-      db.expenses.push({ id: uid(), date: val(d, 'date') || today(), vendor: val(d, 'vendor'), cat: val(d, 'cat') || 'Other', amount: a, note: '' }); save(); toast('Purchase added'); route();
+      db.expenses.push({ id: uid(), date: val(d, 'date') || today(), vendor: val(d, 'vendor'), cat: readCat(d) || 'Other', amount: a, note: '' }); save(); toast('Purchase added'); route();
     }, 'Add purchase');
-    var v = dlg.querySelector('[name=vendor]'), c = dlg.querySelector('[name=cat]'); if (v) v.oninput = v.onchange = function () { var k = vend[v.value.trim().toLowerCase()]; if (k) c.value = k; else { var g = guessCat(v.value); if (g && CATS.indexOf(g) > -1) c.value = g; } };
+    wireCat(); var v = dlg.querySelector('[name=vendor]'), c = dlg.querySelector('[name=cat]'); if (c) c.addEventListener('change', function () { c.dataset.touched = 1; }); if (v) v.oninput = v.onchange = function () { if (c.dataset.touched) return; var k = vend[v.value.trim().toLowerCase()]; if (k) c.value = k; else { var g = guessCat(v.value); if (g && CATS.indexOf(g) > -1) c.value = g; } };
   }
   function spending() {
     var k = spendMonth || today().slice(0, 7), cur = monthData(k), prev = monthData(shiftMonth(k, -1)), rows = Object.keys(cur.cats).map(function (c) { return cur.cats[c]; }).sort(function (a, b) { return b.amt - a.amt; });
@@ -441,7 +441,11 @@
     draw();
   }
 
-  var CATS = ['Groceries', 'Food & drinks', 'Shopping', 'Entertainment', 'Gifts', 'Fuel', 'Health', 'Home', 'Software', 'Equipment', 'Travel', 'Office', 'Marketing', 'Taxes & fees', 'Services', 'Other'];
+  var BASE_CATS = ['Groceries', 'Food & drinks', 'Shopping', 'Entertainment', 'Gifts', 'Fuel', 'Health', 'Home', 'Software', 'Equipment', 'Travel', 'Office', 'Marketing', 'Taxes & fees', 'Services', 'Other'], CATS = BASE_CATS.slice();
+  function refreshCats() { var extra = (db.settings.cats || []).filter(function (c) { return BASE_CATS.indexOf(c) < 0; }); CATS.length = 0; BASE_CATS.slice(0, BASE_CATS.length - 1).concat(extra, ['Other']).forEach(function (c) { CATS.push(c); }); }
+  function catSelect(cur) { return '<div><label>Category</label><select name="cat">' + CATS.map(function (c) { return '<option value="' + esc(c) + '" ' + (c === cur ? 'selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '<option value="__new">＋ New category…</option></select><input name="newcat" placeholder="Name of the new category" maxlength="28" hidden style="margin-top:6px"></div>'; }
+  function wireCat() { var sel = dlg.querySelector('[name=cat]'), inp = dlg.querySelector('[name=newcat]'); if (sel && inp) sel.addEventListener('change', function () { sel.dataset.touched = 1; inp.hidden = sel.value !== '__new'; if (!inp.hidden) inp.focus(); }); }
+  function readCat(d) { var v = val(d, 'cat'); if (v !== '__new') return v; var n = val(d, 'newcat').replace(/[<>]/g, '').slice(0, 28); if (!n) return 'Other'; db.settings.cats = db.settings.cats || []; if (BASE_CATS.indexOf(n) < 0 && db.settings.cats.indexOf(n) < 0) db.settings.cats.push(n); refreshCats(); return n; }
   function expenses() {
     var y = new Date().getFullYear();
     view.innerHTML = '<div class="top"><h1>Expenses</h1><div class="row"><label class="btn" style="margin:0">🏦 Import bank statement<input type="file" id="csvf" accept=".csv,.txt,text/csv" hidden></label><label class="btn" style="margin:0">📷 Scan receipts<input type="file" id="scan" accept="image/*,application/pdf" multiple hidden></label><button class="btn" id="bud">Budgets</button><button class="btn" id="exp">Export CSV</button><button class="btn p" id="new">+ New expense</button></div></div><div id="bw"></div><div class="card" id="c"></div>';
@@ -457,12 +461,12 @@
       x = x || { id: uid(), date: today(), vendor: '', cat: 'Other', amount: '', note: '' };
       var isNew = !db.expenses.some(function (e) { return e.id === x.id; });
       ask('<h2>' + (isNew ? 'New expense' : 'Edit expense') + '</h2><div class="f">' + privField(x) + field('Date', 'date', x.date, 'date') + field('Amount (incl. VAT)', 'amount', x.amount, 'text', 'inputmode="decimal" required') + field('VAT % in this amount', 'vat', x.vat == null ? db.settings.vat : x.vat, 'text', 'inputmode="decimal"') + field('Vendor *', 'vendor', x.vendor, 'text', 'required') +
-        '<div><label>Category</label><select name="cat">' + CATS.map(function (c) { return '<option ' + (c === x.cat ? 'selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>' + '<div class="w">' + field('Note', 'note', x.note) + '</div>' + attachField(x, file) + '</div>' + (isNew ? '' : '<p><button type="button" class="btn s d" id="rm">Delete expense</button></p>'), function (d) {
+        catSelect(x.cat) + '<div class="w">' + field('Note', 'note', x.note) + '</div>' + attachField(x, file) + '</div>' + (isNew ? '' : '<p><button type="button" class="btn s d" id="rm">Delete expense</button></p>'), function (d) {
         if (!val(d, 'vendor') || !num(val(d, 'amount'))) { toast('Vendor and amount are required'); return; }
-        x.date = val(d, 'date') || today(); x.amount = num(val(d, 'amount')); x.vendor = val(d, 'vendor'); x.cat = val(d, 'cat'); x.note = val(d, 'note'); x.vat = num(val(d, 'vat')); saveAttach(x, d, file); delete x.auto;
+        x.date = val(d, 'date') || today(); x.amount = num(val(d, 'amount')); x.vendor = val(d, 'vendor'); x.cat = readCat(d); x.note = val(d, 'note'); x.vat = num(val(d, 'vat')); saveAttach(x, d, file); delete x.auto;
         if (isNew) db.expenses.push(x); save(); draw(); toast('Expense saved');
       });
-      var rm = dlg.querySelector('#rm'); if (rm) rm.onclick = function () { db.expenses = db.expenses.filter(function (e) { return e.id !== x.id; }); save(); dlg.close('x'); draw(); };
+      wireCat(); var rm = dlg.querySelector('#rm'); if (rm) rm.onclick = function () { db.expenses = db.expenses.filter(function (e) { return e.id !== x.id; }); save(); dlg.close('x'); draw(); };
     }
     $('#csvf').onchange = function (ev) { var f = ev.target.files[0]; ev.target.value = ''; if (!f) return; f.text().then(function (t) { bankImport(t, draw); }); };
     $('#scan').onchange = function (ev) {
@@ -515,14 +519,14 @@
       '<div class="card"><h2>Your business</h2><div class="f">' + '<div class="w"><label>What do you use Ledgerly for?</label><select name="mode"><option value="both" ' + ((s.mode || 'both') === 'both' ? 'selected' : '') + '>Home and business</option><option value="home" ' + (s.mode === 'home' ? 'selected' : '') + '>Home & family only</option><option value="work" ' + (s.mode === 'work' ? 'selected' : '') + '>My business only</option></select></div>' + field('Your name / business name', 'name', s.name) + field('Tax ID', 'taxId', s.taxId) + field('Email', 'email', s.email, 'email') + field('IBAN', 'iban', s.iban) + '<div class="w"><label>Address</label><textarea name="address" rows="3">' + esc(s.address) + '</textarea></div></div></div>' +
       '<div class="card" style="margin-top:14px"><h2>Invoice defaults</h2><div class="f">' + field('Currency (ISO code)', 'currency', s.currency, 'text', 'maxlength="3"') + field('Default VAT %', 'vat', s.vat, 'text', 'inputmode="decimal"') + field('People sharing the household bills', 'people', s.people, 'number', 'min="1"') + field('Number prefix', 'prefix', s.prefix) + field('Payment terms (days)', 'terms', s.terms, 'number') +
       '<div class="w"><label>Default invoice footer</label><textarea name="footer" rows="2">' + esc(s.footer) + '</textarea></div></div></div>' +
-      '<div class="card" style="margin-top:14px"><h2>Backup & data</h2><p class="mut">Everything is stored in this browser only. Export a backup regularly, and use it to move to another device.</p><div class="row"><button class="btn" id="bk">Export backup (.json)</button><label class="btn" style="margin:0">Import backup<input type="file" id="im" accept="application/json" hidden></label><button class="btn" id="demo">Load demo data</button><button class="btn d" id="wipe">Erase everything</button></div></div>' + extraSettingsHtml() + familyHtml();
+      '<div class="card" style="margin-top:14px"><h2>Backup & data</h2><p class="mut">Everything is stored in this browser only. Export a backup regularly, and use it to move to another device.</p><div class="row"><button class="btn" id="bk">Export backup (.json)</button><label class="btn" style="margin:0">Import backup<input type="file" id="im" accept="application/json" hidden></label><button class="btn" id="demo">Load demo data</button><button class="btn d" id="wipe">Erase everything</button></div></div>' + lookHtml() + extraSettingsHtml() + familyHtml();
     $('#save').onclick = function () {
       var g = function (n) { return val(view, n); };
       db.settings = Object.assign(db.settings, { mode: g('mode') || 'both', name: g('name'), taxId: g('taxId'), email: g('email'), iban: g('iban'), address: view.querySelector('[name=address]').value.trim(), currency: (g('currency') || 'EUR').toUpperCase().slice(0, 3), vat: num(g('vat')), prefix: g('prefix') || 'INV', people: Math.max(1, parseInt(g('people'), 10) || 1), terms: Math.max(0, parseInt(g('terms'), 10) || 0), footer: view.querySelector('[name=footer]').value });
       save(); applyMode(); toast('Settings saved');
     };
     $('#bk').onclick = function () { download(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }), 'ledgerly-backup-' + today() + '.json'); db.settings.lastExport = today(); save(); };
-    extraSettingsWire(); familyWire();
+    extraSettingsWire(); lookWire(); familyWire();
     $('#im').onchange = function (e) {
       var f = e.target.files[0]; if (!f) return; var r = new FileReader();
       r.onload = function () {
@@ -843,6 +847,80 @@
   window.__afterSave = function () { if (!dirH) return; clearTimeout(bkT); bkT = setTimeout(bkWrite, 2500); };
   if (fsOk()) idbGet('__dir').then(function (h) { if (h) { dirH = h; bkPerm(h, false).then(function (p) { bkState = p === 'granted' ? 'on' : 'needs-permission'; }); } }).catch(function () { });
 
+
+  /* ---------- themes: gallery, custom colours, light/dark, little decorations ---------- */
+  var THEMES = [
+    { id: 'caramel', n: 'Caramel', e: '🍯', l: { bg: '#f7f0e6', card: '#fffaf4', text: '#3a2a1d', acc: '#a65f1e', h1: '#4a2f1c', h2: '#9c5f2a' }, d: { bg: '#1d1510', card: '#271d16', text: '#f3e8da', acc: '#e3a566', h1: '#2e1d11', h2: '#7a4a22' } },
+    { id: 'forest', n: 'Forest', e: '🌲', l: { bg: '#f3f5f1', card: '#ffffff', text: '#15201b', acc: '#0f6b55', h1: '#0b3b31', h2: '#136b56' }, d: { bg: '#0e1411', card: '#16201b', text: '#e8efe9', acc: '#4fd1a5', h1: '#0a2a23', h2: '#14594a' } },
+    { id: 'christmas', n: 'Christmas', e: '🎄', deco: ['❄️', '❄️', '✨', '🎄'], mode: 'fall', l: { bg: '#fbf4ee', card: '#fffdfb', text: '#2f1a1a', acc: '#b3202a', h1: '#5c0f16', h2: '#1f6b3a' }, d: { bg: '#15100f', card: '#211a19', text: '#f6ebe6', acc: '#ff6b73', h1: '#3b0a10', h2: '#124a2a' } },
+    { id: 'halloween', n: 'Halloween', e: '🎃', deco: ['🎃', '🦇', '👻'], mode: 'rise', l: { bg: '#f8f1ea', card: '#fffaf5', text: '#2a1a2e', acc: '#c2530a', h1: '#2a1a3a', h2: '#c2530a' }, d: { bg: '#130e18', card: '#1d1626', text: '#f1e6f5', acc: '#ff8a3d', h1: '#1d1030', h2: '#8a3a08' } },
+    { id: 'ocean', n: 'Ocean', e: '🌊', deco: ['🫧', '🫧', '🐠'], mode: 'rise', l: { bg: '#eef5f8', card: '#ffffff', text: '#10252e', acc: '#0b6e8a', h1: '#0b3c5d', h2: '#2a8fb0' }, d: { bg: '#0a1419', card: '#111f26', text: '#e4f1f6', acc: '#5cc8e6', h1: '#08283d', h2: '#17627f' } },
+    { id: 'lavender', n: 'Lavender', e: '💜', l: { bg: '#f4f0fa', card: '#ffffff', text: '#251a3a', acc: '#6b46c1', h1: '#3b2a6b', h2: '#8b6bd6' }, d: { bg: '#130f1d', card: '#1c1630', text: '#eee8fa', acc: '#b79cff', h1: '#2a1f55', h2: '#5a3fb0' } },
+    { id: 'sakura', n: 'Sakura', e: '🌸', deco: ['🌸', '🌸', '🌷'], mode: 'fall', l: { bg: '#fdf1f4', card: '#fffafb', text: '#3a1a26', acc: '#c2456b', h1: '#7a2a45', h2: '#e07a9a' }, d: { bg: '#1a0f13', card: '#25161b', text: '#f8e8ee', acc: '#ff8fb0', h1: '#4a1a2c', h2: '#a8456a' } },
+    { id: 'toys', n: 'Cartoon', e: '🧸', style: 'chunky', deco: ['🐻', '🐼', '🦊', '🐰', '🐸', '🐱'], mode: 'rise', l: { bg: '#fff3c4', card: '#ffffff', text: '#2b2250', acc: '#e0386f', h1: '#5b4bd6', h2: '#ff7ab6' }, d: { bg: '#1b1636', card: '#262050', text: '#fff1c9', acc: '#ff7ab6', h1: '#3a2f90', h2: '#c2408a' } },
+    { id: 'midnight', n: 'Midnight', e: '🌙', deco: ['✨', '⭐'], mode: 'twinkle', dark: true, l: { bg: '#0f1220', card: '#171b30', text: '#e9ecfa', acc: '#8fa8ff', h1: '#1b2150', h2: '#3b4bb0' }, d: { bg: '#0f1220', card: '#171b30', text: '#e9ecfa', acc: '#8fa8ff', h1: '#1b2150', h2: '#3b4bb0' } }
+  ];
+  var hx = function (h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
+  var toHex = function (r) { return '#' + r.map(function (v) { return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'); }).join(''); };
+  var mixc = function (a, b, t) { var x = hx(a), y = hx(b); return toHex([0, 1, 2].map(function (i) { return x[i] * (1 - t) + y[i] * t; })); };
+  var lumc = function (h) { var c = hx(h).map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+  function buildVars(q, dark) {
+    var o = { '--bg': q.bg, '--card': q.card, '--text': q.text, '--acc': q.acc, '--mut': mixc(q.text, q.bg, .45), '--line': mixc(q.bg, q.text, .14), '--acc2': mixc(q.card, q.acc, dark ? .24 : .14), '--onacc': lumc(q.acc) > .42 ? '#241506' : '#ffffff', '--hero1': q.h1, '--hero2': q.h2, '--heroink': lumc(q.h1) > .5 ? '#2a2118' : '#fff7ea', 'color-scheme': dark ? 'dark' : 'light' };
+    if (dark) { o['--ok'] = '#8fd19e'; o['--okb'] = '#1d3524'; o['--warn'] = '#ffb067'; o['--warnb'] = '#3a2612'; o['--bad'] = '#ff8a7a'; o['--badb'] = '#3b1a1d'; o['--c1'] = '#6f8cf0'; o['--c2'] = '#d9a443'; o['--c3'] = '#b86ad6'; o['--c4'] = '#2fa87c'; }
+    else { o['--ok'] = '#2f7d4f'; o['--okb'] = '#e4f2e8'; o['--warn'] = '#a85a05'; o['--warnb'] = '#fff1e0'; o['--bad'] = '#b3372b'; o['--badb'] = '#fbe5e0'; o['--c1'] = '#3556c9'; o['--c2'] = '#b87400'; o['--c3'] = '#9333b8'; o['--c4'] = '#0f8a63'; }
+    return o;
+  }
+  function customTheme() {
+    var c = Object.assign({ acc: '#a65f1e', bg: '#f7f0e6', h1: '#4a2f1c', h2: '#9c5f2a' }, db.settings.custom || {});
+    var l = { bg: c.bg, card: mixc(c.bg, '#ffffff', .7), text: mixc('#1c1510', c.acc, .12), acc: c.acc, h1: c.h1, h2: c.h2 };
+    var d = { bg: mixc('#101010', c.acc, .1), card: mixc('#171717', c.acc, .14), text: '#f2eadf', acc: mixc(c.acc, '#ffffff', .4), h1: mixc(c.h1, '#000000', .35), h2: mixc(c.h2, '#000000', .25) };
+    return { id: 'custom', n: 'Custom', e: '🎨', l: l, d: d };
+  }
+  function curTheme() { var id = db.settings.theme || 'caramel'; if (id === 'custom') return customTheme(); return THEMES.filter(function (t) { return t.id === id; })[0] || THEMES[0]; }
+  function applyTheme() {
+    var T = curTheme(), sch = db.settings.scheme || 'auto'; if (T.dark) sch = 'dark';
+    var css = function (o) { return Object.keys(o).map(function (k) { return k + ':' + o[k]; }).join(';'); }, L = css(buildVars(T.l, false)), D = css(buildVars(T.d, true)), out;
+    out = sch === 'light' ? 'html[data-t]{' + L + '}' : sch === 'dark' ? 'html[data-t]{' + D + '}' : 'html[data-t]{' + L + '}@media (prefers-color-scheme:dark){html[data-t]{' + D + '}}';
+    var st = document.getElementById('thm'); if (!st) { st = document.createElement('style'); st.id = 'thm'; document.head.appendChild(st); } st.textContent = out;
+    var h = document.documentElement; h.setAttribute('data-t', T.id); h.dataset.theme = T.id; if (T.style) h.dataset.style = T.style; else delete h.dataset.style;
+    var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = T.l.acc;
+    drawDeco(T);
+  }
+  function drawDeco(T) {
+    var old = document.getElementById('deco'); if (old) old.remove();
+    if (!T.deco || db.settings.deco === false || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var n = innerWidth < 700 ? 9 : 16, box = document.createElement('div'); box.id = 'deco'; box.setAttribute('aria-hidden', 'true');
+    for (var i = 0; i < n; i++) { var e = document.createElement('span'); e.textContent = T.deco[i % T.deco.length]; var dur = 10 + Math.random() * 14; e.style.cssText = 'left:' + Math.random() * 98 + '%;font-size:' + (14 + Math.random() * 14) + 'px;animation:d' + T.mode + ' ' + dur + 's linear ' + (-Math.random() * dur) + 's infinite'; box.appendChild(e); }
+    document.body.appendChild(box);
+  }
+  function themePickerHtml() {
+    var cur = db.settings.theme || 'caramel', c = Object.assign({ acc: '#a65f1e', bg: '#f7f0e6', h1: '#4a2f1c', h2: '#9c5f2a' }, db.settings.custom || {}), all = THEMES.concat([customTheme()]);
+    return '<div class="tiles">' + all.map(function (t) { return '<button type="button" class="tile' + (cur === t.id ? ' on' : '') + '" data-th="' + t.id + '"><span class="sw" style="background:linear-gradient(135deg,' + t.l.h1 + ',' + t.l.h2 + ')"><i style="background:' + t.l.acc + '"></i><i style="background:' + t.l.bg + '"></i></span><b>' + t.e + ' ' + t.n + '</b></button>'; }).join('') + '</div>' +
+      (cur === 'custom' ? '<div class="f" style="margin-top:12px"><div><label>Main colour</label><input type="color" data-cc="acc" value="' + c.acc + '"></div><div><label>Background</label><input type="color" data-cc="bg" value="' + c.bg + '"></div><div><label>Header colour 1</label><input type="color" data-cc="h1" value="' + c.h1 + '"></div><div><label>Header colour 2</label><input type="color" data-cc="h2" value="' + c.h2 + '"></div></div>' : '') +
+      '<div class="f" style="margin-top:12px"><div><label>Light or dark</label><select data-sch><option value="auto" ' + ((db.settings.scheme || 'auto') === 'auto' ? 'selected' : '') + '>Follow my device</option><option value="light" ' + (db.settings.scheme === 'light' ? 'selected' : '') + '>Always light</option><option value="dark" ' + (db.settings.scheme === 'dark' ? 'selected' : '') + '>Always dark</option></select></div><div><label>Little decorations (snow, petals, friends…)</label><select data-deco><option value="1" ' + (db.settings.deco !== false ? 'selected' : '') + '>On</option><option value="0" ' + (db.settings.deco === false ? 'selected' : '') + '>Off</option></select></div></div>';
+  }
+  function themeWire(root, redraw) {
+    root.querySelectorAll('[data-th]').forEach(function (b) { b.onclick = function () { db.settings.theme = b.dataset.th; save(); applyTheme(); redraw(); }; });
+    root.querySelectorAll('[data-cc]').forEach(function (i) { i.oninput = function () { db.settings.custom = Object.assign({}, db.settings.custom || {}); db.settings.custom[i.dataset.cc] = i.value; applyTheme(); }; i.onchange = function () { save(); redraw(); }; });
+    var sc = root.querySelector('[data-sch]'); if (sc) sc.onchange = function () { db.settings.scheme = sc.value; save(); applyTheme(); };
+    var dc = root.querySelector('[data-deco]'); if (dc) dc.onchange = function () { db.settings.deco = dc.value === '1'; save(); applyTheme(); };
+  }
+  function themeSheet() {
+    function draw() { dlg.innerHTML = '<form method="dialog"><h2>🎨 Choose your look</h2><div id="tp">' + themePickerHtml() + '</div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn p" value="x">Done</button></div></form>'; themeWire(dlg, draw); }
+    dlg.onclose = null; draw(); dlg.showModal();
+  }
+
+  function lookHtml() {
+    var th = db.settings.theme || 'caramel', mine = db.settings.cats || [];
+    return '<div class="card" style="margin-top:14px"><h2>Look & categories</h2><div id="thpick">' + themePickerHtml() + '</div>' +
+      '<p style="margin:16px 0 6px"><b>Your categories</b></p><p class="mut" style="margin:0 0 8px;font-size:13px">The built-in categories stay. Add your own for purchases and expenses — they also appear when you add a purchase.</p><div class="row" id="mycats">' + (mine.length ? mine.map(function (c, i) { return '<span class="tag">' + esc(c) + ' <a href="#" data-rc="' + i + '" title="Remove" style="text-decoration:none">✕</a></span>'; }).join('') : '<span class="mut">None yet</span>') + '</div>' +
+      '<div class="row" style="margin-top:10px"><input id="ncat" placeholder="New category, e.g. Pets" maxlength="28" style="max-width:240px"><button class="btn" id="acat">Add category</button></div></div>';
+  }
+  function lookWire() {
+    function dp() { $('#thpick').innerHTML = themePickerHtml(); themeWire($('#thpick'), dp); } themeWire($('#thpick'), dp);
+    $('#acat').onclick = function () { var n = ($('#ncat').value || '').replace(/[<>]/g, '').trim(); if (!n) return; db.settings.cats = db.settings.cats || []; if (BASE_CATS.indexOf(n) > -1 || db.settings.cats.indexOf(n) > -1) { toast('That category already exists'); return; } db.settings.cats.push(n); save(); refreshCats(); settings(); };
+    view.querySelectorAll('[data-rc]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var n = db.settings.cats[+a.dataset.rc]; db.settings.cats.splice(+a.dataset.rc, 1); save(); refreshCats(); toast('Removed “' + n + '”. Past entries keep it.'); settings(); }; });
+  }
   function extraSettingsHtml() {
     var pd = pinData(), lang = lsGet(LANGKEY) || 'en', nperm = ('Notification' in window) ? Notification.permission : 'unsupported';
     return '<div class="card" style="margin-top:14px"><h2>Security & automatic backup</h2>' +
@@ -1276,6 +1354,6 @@
       .forEach(function (e) { db.expenses.push({ id: uid(), date: e[0], vendor: e[1], cat: e[2], amount: e[3], note: '' }); });
   }
 
-  applyMode(); runRecurring(); route(); lock(); notifyDue(); setTimeout(runSync, 1500);
+  applyTheme(); refreshCats(); applyMode(); runRecurring(); route(); lock(); notifyDue(); setTimeout(runSync, 1500);
   if (!location.hash) location.hash = '#/';
 })();

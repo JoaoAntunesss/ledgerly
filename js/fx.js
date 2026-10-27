@@ -30,7 +30,7 @@
   function coins(host, big) {
     var T = window.THREE, w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
     var r = new T.WebGLRenderer({ alpha: true, antialias: true }); r.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); r.setSize(w, h);
-    var cv = r.domElement; cv.className = 'fxcanvas'; host.insertBefore(cv, host.firstChild);
+    var cv = r.domElement; cv.className = 'fxcanvas'; cv.style.setProperty('--o', big ? 1 : .8); host.insertBefore(cv, host.firstChild);
     var sc = new T.Scene(), cam = new T.PerspectiveCamera(40, w / h, 0.1, 100); cam.position.z = 14;
     sc.add(new T.AmbientLight(0xffffff, 1.05)); var d = new T.DirectionalLight(0xfff1c9, 1.1); d.position.set(4, 6, 8); sc.add(d); var d2 = new T.PointLight(0x7fe3c4, .5, 40); d2.position.set(-8, -3, 6); sc.add(d2);
     var geo = new T.CylinderGeometry(1, 1, .16, 40), rim = new T.CylinderGeometry(1.02, 1.02, .12, 40);
@@ -39,7 +39,7 @@
     for (i = 0; i < n; i++) {
       var g = new T.Group(); g.add(new T.Mesh(geo, gold)); var inner = new T.Mesh(new T.CylinderGeometry(.72, .72, .19, 36), dark); g.add(inner); g.add(new T.Mesh(rim, gold));
       var s = big ? 1.9 : .45 + Math.random() * .55; g.scale.set(s, s, s);
-      g.position.set(big ? 0 : (Math.random() * 2 - 1) * 9 * (w / h) / 2, big ? 0 : (Math.random() * 2 - 1) * 4.5, big ? 0 : -2 - Math.random() * 6);
+      g.position.set(big ? 0 : (big ? 0 : (.12 + Math.random() * .88)) * 9 * (w / h) / 2 * 1.0, big ? 0 : (Math.random() * 2 - 1) * 4.5, big ? 0 : -2 - Math.random() * 6);
       g.rotation.set(Math.random() * 3, Math.random() * 3, 0); g.userData = { sx: (Math.random() * .6 + .2) * (Math.random() < .5 ? -1 : 1), sy: Math.random() * .5 + .2, f: Math.random() * 6, a: .15 + Math.random() * .3, y0: g.position.y };
       sc.add(g); list.push(g);
     }

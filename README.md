@@ -60,6 +60,9 @@ No build step. Logic can be exercised in a browser with Playwright (see the comm
 ## License
 MIT
 
+## Themes
+Nine ready-made looks (Caramel, Forest, Christmas, Halloween, Ocean, Lavender, Sakura, Cartoon, Midnight) or pick your own colours, light/dark mode and optional little decorations (snow, petals, bubbles, friendly animals).
+
 ## Spending & saving
 See every month by category (bills, subscriptions, loans, purchases), compare with the previous month, add purchases in seconds (the category is remembered per shop) and tell Ledgerly how much you want to save — it suggests where to cut.
 
