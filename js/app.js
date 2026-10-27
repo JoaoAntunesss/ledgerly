@@ -80,8 +80,23 @@
     var h = location.hash.replace(/^#\/?/, '').split('/'), name = h[0] || 'dashboard';
     if (!routes[name]) name = 'dashboard';
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === (name === 'invoice' || name === 'edit' ? 'invoices' : name)); });
-    routes[name](h[1]); window.scrollTo(0, 0);
+    routes[name](h[1]); window.scrollTo(0, 0); view.dataset.page = name; document.title = 'Ledgerly'; tabOn(name); decorateEmpty(name);
   }
+  var EMPTY_ICON = { bills: '🧾', subs: '🔁', income: '💰', loans: '🏦', wealth: '🎯', split: '🤝', reminders: '⏰', expenses: '💸', invoices: '📄', clients: '👥' };
+  var EMPTY_TITLE = { bills: 'No bills yet', subs: 'No subscriptions yet', income: 'No income yet', loans: 'No loans yet', wealth: 'Nothing here yet', split: 'No shared groups yet', reminders: 'Nothing to remind you about', expenses: 'No expenses yet', invoices: 'No invoices yet', clients: 'No clients yet' };
+  function decorateEmpty(name) {
+    view.querySelectorAll('.card.empty').forEach(function (e) {
+      if (e.dataset.done) return; e.dataset.done = 1;
+      var ic = EMPTY_ICON[name] || '✨'; e.insertAdjacentHTML('afterbegin', '<div class="eico">' + ic + '</div><h3>' + (EMPTY_TITLE[name] || 'Nothing here yet') + '</h3>');
+      var main = view.querySelector('.top .btn.p'), row = '<div class="ectas">';
+      if (main) row += '<button class="btn p" data-ecta="main">' + main.textContent.replace(/^\+\s*/, '＋ ') + '</button>';
+      var imp = Array.prototype.filter.call(view.querySelectorAll('.top .btn'), function (b) { return /photo|scan|import/i.test(b.textContent); })[0];
+      if (imp) row += '<button class="btn" data-ecta="imp">' + imp.textContent + '</button>';
+      row += '<button class="btn" data-ecta="demo">✨ Try with demo data</button></div>'; e.insertAdjacentHTML('beforeend', row);
+      e.querySelectorAll('[data-ecta]').forEach(function (b) { b.onclick = function () { var k = b.dataset.ecta; if (k === 'main') main.click(); else if (k === 'imp') imp.click(); else { demo(); save(); route(); } }; });
+    });
+  }
+  function tabOn(name) { document.querySelectorAll('#tabbar a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === name || (a.dataset.r === 'wealth' && /^(income|loans|wealth|split)$/.test(name))); }); }
   window.addEventListener('hashchange', route);
 
   function kpi(label, v, cls) { return '<div class="card kpi ' + (cls || '') + '"><small>' + label + '</small><b>' + v + '</b></div>'; }
@@ -451,7 +466,7 @@
     var shown = billsType === 'all' ? types : [billsType];
     view.innerHTML = '<div class="top"><h1>Utilities</h1><div class="row"><label class="btn" style="margin:0">📷 Import photo / PDF<input type="file" id="imp" accept="image/*,application/pdf" hidden></label><button class="btn p" id="new">+ Add bill</button></div></div>' +
       (types.length ? '<div class="row" style="margin-bottom:14px"><button class="btn s ' + (billsType === 'all' ? 'p' : '') + '" data-t="all">All</button>' + types.map(function (t) { return '<button class="btn s ' + (billsType === t ? 'p' : '') + '" data-t="' + t + '">' + BT[t].l + '</button>'; }).join('') + '</div>' : '') +
-      alertsHtml(alerts().filter(function (a) { return billsType === 'all' || a.t === billsType; })) + (shown.length ? shown.map(billCard).join('') : '<div class="card empty">Add your water, electricity or gas bills (or import a photo/PDF) to see how they change over time and <b>why</b> they went up.<br><br><a href="#/settings">Load demo data</a> to see an example.</div>');
+      alertsHtml(alerts().filter(function (a) { return billsType === 'all' || a.t === billsType; })) + (shown.length ? shown.map(billCard).join('') : '<div class="card empty">Add your water, electricity or gas bill, or import a photo or PDF, and see how it changes and <b>why</b>.</div>');
     $('#new').onclick = function () { billForm(); };
     $('#imp').onchange = function (e) { if (e.target.files[0]) importBill(e.target.files[0]); e.target.value = ''; };
     view.onclick = function (e) {
@@ -572,7 +587,7 @@
       (tips.length ? '<div class="card" style="margin-bottom:14px"><h2>💡 Worth a look</h2>' + tips.map(function (t) { return '<div style="padding:3px 0">• ' + esc(t) + '</div>'; }).join('') + '</div>' : '') +
       (act.length ? '<div class="grid g4"><div class="card kpi"><small>Per month</small><b>' + money(m) + '</b></div><div class="card kpi"><small>Per year</small><b>' + money(m * 12) + '</b></div><div class="card kpi"><small>Active</small><b>' + act.length + '</b></div>' + (off.length ? '<div class="card kpi ok"><small>Saved by cancelling</small><b>' + money(off.reduce(function (a, x) { return a + mineM(x); }, 0)) + '/mo</b></div>' : '') + '</div>' +
         '<div class="card" style="margin-top:14px"><h2>Where the money goes</h2>' + cats.map(function (c) { return '<div style="margin:9px 0"><div class="row" style="justify-content:space-between"><span>' + esc(SC[c] || c) + '</span><span class="mut">' + money(byCat[c]) + '/mo</span></div><div style="height:8px;border-radius:9px;background:var(--bg);overflow:hidden"><div style="height:100%;width:' + byCat[c] / cmax * 100 + '%;background:var(--acc)"></div></div></div>'; }).join('') + '</div>' +
-        '<div class="card" style="margin-top:14px"><h2>Active</h2>' + subTable(act.sort(function (a, b) { return nextRenewal(a).localeCompare(nextRenewal(b)); })) + '</div>' : '<div class="card empty">No subscriptions yet. Add the ones you know, then use the checklist below for the ones you may have forgotten.</div>') +
+        '<div class="card" style="margin-top:14px"><h2>Active</h2>' + subTable(act.sort(function (a, b) { return nextRenewal(a).localeCompare(nextRenewal(b)); })) + '</div>' : '<div class="card empty">Add the ones you know, then use the checklist below for the ones you may have forgotten.</div>') +
       (off.length ? '<div class="card" style="margin-top:14px"><h2>Cancelled</h2>' + subTable(off) + '</div>' : '') +
       '<div class="card" style="margin-top:14px"><h2>Did you forget any of these?</h2><div class="row">' + FORGET.map(function (f, i) { return '<button class="btn s" data-fg="' + i + '">+ ' + esc(f[0]) + '</button>'; }).join('') + '</div><p class="mut" style="font-size:12px;margin:10px 0 0">Tip: check your bank statements and the subscription lists in the App Store / Google Play — that is where forgotten ones hide.</p></div>';
     $('#new').onclick = function () { subForm(); };
