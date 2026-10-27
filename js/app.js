@@ -134,7 +134,7 @@
   function donut(parts, centerTop, centerBottom) {
     var tot = parts.reduce(function (a, p) { return a + p.v; }, 0) || 1, R = 52, C = 2 * Math.PI * R, off = 0;
     return '<svg viewBox="0 0 140 140" class="donut" role="img" aria-label="Spending split"><circle cx="70" cy="70" r="' + R + '" fill="none" stroke="var(--bg)" stroke-width="18"/>' + parts.map(function (p) {
-      var len = p.v / tot * C, el = '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke="' + p.c + '" stroke-width="18" stroke-dasharray="' + Math.max(len - 1.5, 0) + ' ' + C + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 70 70)"><title>' + esc(p.l) + ': ' + money(p.v) + '</title></circle>'; off += len; return el;
+      var len = p.v / tot * C, el = '<circle cx="70" cy="70" r="' + R + '" fill="none" style="stroke:' + p.c + '" stroke-width="18" stroke-dasharray="' + Math.max(len - 1.5, 0) + ' ' + C + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 70 70)"><title>' + esc(p.l) + ': ' + money(p.v) + '</title></circle>'; off += len; return el;
     }).join('') + '<text x="70" y="66" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">' + esc(centerTop) + '</text><text x="70" y="83" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor">' + esc(centerBottom) + '</text></svg>';
   }
   function monthFlows(n) {
@@ -155,6 +155,21 @@
       '<button class="pick" data-mode="both"><b>✨ Both</b><span>Everything in one place</span></button></div>' +
       '<p style="margin:14px 0 0"><button class="btn" id="wdemo">Look around with demo data first</button></p></div>';
   }
+  function daysLeft() { var n = new Date(); return Math.max(1, new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate() - n.getDate() + 1); }
+  var SEARCH = { bills: ['#/bills', 'Utilities'], subs: ['#/subs', 'Subscriptions'], expenses: ['#/expenses', 'Expenses'], invoices: ['#/invoice/', 'Invoices'], clients: ['#/clients', 'Clients'], income: ['#/income', 'Income'], loans: ['#/loans', 'Loans'], items: ['#/reminders', 'Warranties'], deadlines: ['#/reminders', 'Deadlines'], accounts: ['#/wealth', 'Accounts'], goals: ['#/wealth', 'Goals'], groups: ['#/split', 'Split expenses'] };
+  function searchSheet() {
+    dlg.innerHTML = '<form method="dialog"><input class="sbox" id="sq" placeholder="Search bills, subscriptions, invoices, clients…" autocomplete="off"><div id="sres" style="margin-top:10px;max-height:50vh;overflow:auto"></div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
+    dlg.onclose = null; dlg.showModal(); var q = $('#sq'), res = $('#sres');
+    function title(x) { return x.name || x.source || x.desc || x.description || x.vendor || x.provider || x.number || x.title || x.note || x.type || '—'; }
+    q.oninput = function () {
+      var t = q.value.trim().toLowerCase(); if (t.length < 2) { res.innerHTML = '<p class="mut">Type at least two letters.</p>'; return; }
+      var out = []; Object.keys(SEARCH).forEach(function (c) { (db[c] || []).forEach(function (x) { var hay = JSON.stringify(x).toLowerCase(); if (hay.indexOf(t) > -1) out.push({ c: c, x: x }); }); });
+      res.innerHTML = out.length ? out.slice(0, 30).map(function (r) { var S = SEARCH[r.c], href = S[0] + (r.c === 'invoices' ? r.x.id : ''), amt = r.x.amount != null ? money(r.x.amount) : (r.x.balance != null ? money(r.x.balance) : ''); return '<a class="srow" href="' + href + '"><b>' + esc(String(title(r.x))) + '</b><span class="mut">' + S[1] + (r.x.date ? ' · ' + fdate(r.x.date) : '') + '</span><small>' + amt + '</small></a>'; }).join('') : '<p class="mut">Nothing found.</p>';
+      res.querySelectorAll('a').forEach(function (a) { a.onclick = function () { dlg.close('x'); }; });
+    };
+    q.focus();
+  }
+  document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchSheet(); } });
   function greeting() { var h = new Date().getHours(); return h < 6 ? 'Good night' : h < 12 ? 'Good morning' : h < 20 ? 'Good afternoon' : 'Good evening'; }
   function quickChips() {
     return '<div class="chips"><button class="chip" data-q="bill">＋ Bill</button><button class="chip" data-q="scan">📷 Receipt</button><button class="chip" data-q="expense">＋ Expense</button><button class="chip" data-q="income">＋ Income</button><button class="chip" data-q="sub">＋ Subscription</button><button class="chip" data-q="invoice">＋ Invoice</button></div>';
@@ -164,17 +179,18 @@
     var mode = db.settings.mode || 'both';
     var html = '<div class="top"><div><h1>' + greeting() + (db.settings.name ? ', ' + esc(db.settings.name.split(' ')[0]) : '') + '</h1><div class="mut">' + new Date().toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' }) + '</div></div></div>';
     if (empty) { view.innerHTML = html + welcomeHtml(); wireWelcome(); return; }
-    html += quickChips() + backupBanner() + alertsHtml(alerts());
+    html += quickChips(); var warn = backupBanner() + alertsHtml(alerts());
     var o = overviewData();
     if (db.income.length || db.loans.length || db.subs.length || db.bills.length) {
-      var parts = [{ l: 'Loans', v: o.ln, c: '#5c7cfa' }, { l: 'Home bills', v: o.bl, c: '#e8a400' }, { l: 'Subscriptions', v: o.sb, c: '#d6336c' }, { l: 'Other expenses', v: o.ex, c: '#16a394' }].filter(function (p) { return p.v > 0.5; });
+      var parts = [{ l: 'Loans', v: o.ln, c: 'var(--c1)' }, { l: 'Home bills', v: o.bl, c: 'var(--c2)' }, { l: 'Subscriptions', v: o.sb, c: 'var(--c3)' }, { l: 'Other expenses', v: o.ex, c: 'var(--c4)' }].filter(function (p) { return p.v > 0.5; });
       var flows = monthFlows(6), fmax = Math.max.apply(null, flows.map(function (f) { return Math.max(f.inc, f.out); }).concat([1]));
       html += '<div class="hero card"><div><small>' + (db.income.length ? 'Left over this month (estimate)' : 'Monthly costs (estimate)') + '</small><div class="big ' + (o.left < 0 && db.income.length ? 'neg' : '') + '">' + money(db.income.length ? o.left : o.out) + '</div>' +
-        (db.income.length ? '<div class="mut">' + money(o.inc) + ' in · ' + money(o.out) + ' out · you keep ' + (o.inc ? Math.round(Math.max(0, o.left) / o.inc * 100) : 0) + '%' + '</div>' : '<div class="mut">Add your <a href="#/income">income</a> to see what is left each month.</div>') + '</div>' +
+        (db.income.length ? '<div class="mut">' + money(o.inc) + ' in · ' + money(o.out) + ' out · you keep ' + (o.inc ? Math.round(Math.max(0, o.left) / o.inc * 100) : 0) + '%' + '</div>' + (o.left > 0 ? '<div class="perday"><span>≈</span><b>' + money(o.left / daysLeft()) + '</b><span>per day to spend, until month end</span></div>' : '') : '<div class="mut">Add your <a href="#/income">income</a> to see what is left each month.</div>') + '</div>' +
         '<div class="stack" role="img" aria-label="Where this month goes">' + parts.map(function (p) { return '<i style="flex:' + p.v + ';background:' + p.c + '" title="' + esc(p.l) + ' ' + money(p.v) + '"></i>'; }).join('') + '</div></div>';
-      html += '<div class="grid g2" style="margin-top:14px"><div class="card"><h2>Where your money goes</h2><div class="dn">' + donut(parts, 'per month', money(o.out)) + '<div class="lg">' + parts.map(function (p) { return '<div><i style="background:' + p.c + '"></i><span>' + esc(p.l) + '</span><b>' + money(p.v) + '</b><em>' + Math.round(p.v / (o.out || 1) * 100) + '%</em></div>'; }).join('') + '</div></div></div>' +
-        '<div class="card"><h2>Last 6 months</h2><div class="bar" style="height:150px">' + flows.map(function (f) { return '<div><span class="bars"><i style="height:' + f.inc / fmax * 100 + '%" title="In ' + money(f.inc) + '"></i><i class="e" style="height:' + f.out / fmax * 100 + '%;background:#e8590c" title="Out ' + money(f.out) + '"></i></span>' + f.label + '</div>'; }).join('') + '</div><div class="legend"><span><i style="background:var(--acc)"></i>Money in</span><span><i style="background:#e8590c"></i>Money out</span></div></div></div>';
+      html += '<div style="margin-top:14px">' + warn + '</div>'; warn = ''; html += '<div class="grid g2" style="margin-top:14px"><div class="card"><h2>Where your money goes</h2><div class="dn">' + donut(parts, 'per month', money(o.out)) + '<div class="lg">' + parts.map(function (p) { return '<div><i style="background:' + p.c + '"></i><span>' + esc(p.l) + '</span><b>' + money(p.v) + '</b><em>' + Math.round(p.v / (o.out || 1) * 100) + '%</em></div>'; }).join('') + '</div></div></div>' +
+        '<div class="card"><h2>Last 6 months</h2><div class="bar" style="height:150px">' + flows.map(function (f) { return '<div><span class="bars"><i style="height:' + f.inc / fmax * 100 + '%" title="In ' + money(f.inc) + '"></i><i class="e" style="height:' + f.out / fmax * 100 + '%;background:var(--c2)" title="Out ' + money(f.out) + '"></i></span>' + f.label + '</div>'; }).join('') + '</div><div class="legend"><span><i style="background:var(--c4)"></i>Money in</span><span><i style="background:var(--c2)"></i>Money out</span></div></div></div>';
     }
+    html += warn;
     var nw = db.accounts.length ? netWorth() : null;
     var small = [];
     if (nw != null) small.push(kpi('Net worth', money(nw), nw >= 0 ? 'ok' : 'bad'));
@@ -199,7 +215,7 @@
     else if (k === 'loan') loanForm(); else if (k === 'goal') { go('#/wealth', '#newg'); } else if (k === 'account') { go('#/wealth', '#newa'); }
   }
   function moreSheet() {
-    var items = Array.prototype.map.call(document.querySelectorAll('#nav a'), function (a) { return '<a href="' + a.getAttribute('href') + '" class="mrow">' + a.innerHTML + '</a>'; }).join('');
+    var items = '<button type="button" class="mrow" data-act="search" style="text-align:left;background:none;font:inherit;grid-column:1/-1">🔍 Search</button>' + Array.prototype.map.call(document.querySelectorAll('#nav a'), function (a) { return '<a href="' + a.getAttribute('href') + '" class="mrow">' + a.innerHTML + '</a>'; }).join('');
     dlg.innerHTML = '<form method="dialog"><h2>All sections</h2><div class="mgrid">' + items + '</div>' + (window.__installEvt || isIOS() ? '<p style="margin-top:14px"><button type="button" class="btn p" id="inst" style="width:100%">📲 Install the app on this phone</button></p>' : '') + '<p style="margin-top:10px"><button type="button" class="btn" data-act="lang" style="width:100%">🌐 ' + (LOCALE ? 'English' : 'Português') + '</button></p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
     dlg.onclose = null; dlg.showModal(); dlg.querySelectorAll('a.mrow').forEach(function (a) { a.onclick = function () { dlg.close('x'); }; });
     var i = dlg.querySelector('#inst'); if (i) i.onclick = installApp;
@@ -217,7 +233,7 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__installEvt = e; var b = $('#installbtn'); if (b) b.hidden = false; });
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]'); if (!t) return; var a = t.dataset.act;
-    if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp();
+    if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp();
   });
 
   function invTable(list) {
