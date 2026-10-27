@@ -37,13 +37,8 @@
 ## Run it
 Open `index.html`, or serve the folder (`python3 -m http.server`). Host it on GitHub Pages for install/offline and family sync (both need https).
 
-## Family space setup (one time)
-1. Firebase console → Authentication → enable **Anonymous** sign-in.
-2. Realtime Database → Rules, add:
-   ```json
-   "households": { "$hid": { ".read": "auth != null", ".write": "auth != null" } }
-   ```
-3. In the app: Settings → Family space → paste the database URL and Web API key → *Create family space*. Share the generated code (privately) with your family; they choose *Join with a code*.
+## Sharing with your family
+Settings → **Family space** → *Sign in with Google and create*. Send the family code privately to the other person; they open the app, choose *Sign in with Google and join with a code* and paste it. Each person uses their own Google account; only members who know the code can open the space, and everything is encrypted with the code before it leaves the device.
 
 Choose how much to share when creating the space: **Household only** (bills, subscriptions, loans, accounts, goals, warranties, deadlines, split groups) or **Everything** for couples who manage money together — salaries, income, expenses and invoices included. You can change it later, and any single item can be marked **Private (only me)** so it never syncs. Income entries can say whose they are (e.g. "Ana"). Conflicts: the most recent edit of an item wins. Attachments are not synced.
 
