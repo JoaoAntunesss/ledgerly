@@ -75,15 +75,15 @@
   function field(label, name, v, type, extra) { return '<div><label>' + label + '</label><input name="' + name + '" type="' + (type || 'text') + '" value="' + esc(v) + '" ' + (extra || '') + '></div>'; }
 
   /* ---------- views ---------- */
-  var routes = { dashboard: dashboard, spending: spending, invoices: invoices, invoice: invoiceDoc, edit: invoiceEdit, clients: clients, expenses: expenses, bills: bills, subs: subs, income: incomePage, loans: loansPage, wealth: wealth, reminders: reminders, split: split, vat: vatReport, settings: settings };
+  var routes = { docs: docsPage, dashboard: dashboard, spending: spending, invoices: invoices, invoice: invoiceDoc, edit: invoiceEdit, clients: clients, expenses: expenses, bills: bills, subs: subs, income: incomePage, loans: loansPage, wealth: wealth, reminders: reminders, split: split, vat: vatReport, settings: settings };
   function route() {
-    var h = location.hash.replace(/^#\/?/, '').split('/'), name = h[0] || 'dashboard';
-    if (!routes[name]) name = 'dashboard';
+    var h = location.hash.replace(/^#\/?/, '').split('/'), name = h[0] || 'docs';
+    if (!routes[name]) name = 'docs';
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === (name === 'invoice' || name === 'edit' ? 'invoices' : name)); });
     routes[name](h[1]); window.scrollTo(0, 0); view.dataset.page = name; document.title = 'Ledgerly'; tabOn(name); decorateEmpty(name); if (window.__fx) window.__fx.after(name);
   }
-  var EMPTY_ICON = { bills: '🧾', subs: '🔁', income: '💰', loans: '🏦', wealth: '🎯', split: '🤝', reminders: '⏰', expenses: '💸', invoices: '📄', clients: '👥' };
-  var EMPTY_TITLE = { bills: 'No bills yet', subs: 'No subscriptions yet', income: 'No income yet', loans: 'No loans yet', wealth: 'Nothing here yet', split: 'No shared groups yet', reminders: 'Nothing to remind you about', expenses: 'No expenses yet', invoices: 'No invoices yet', clients: 'No clients yet' };
+  var EMPTY_ICON = { docs: '📥', bills: '🧾', subs: '🔁', income: '💰', loans: '🏦', wealth: '🎯', split: '🤝', reminders: '⏰', expenses: '💸', invoices: '📄', clients: '👥' };
+  var EMPTY_TITLE = { docs: 'All caught up', bills: 'No bills yet', subs: 'No subscriptions yet', income: 'No income yet', loans: 'No loans yet', wealth: 'Nothing here yet', split: 'No shared groups yet', reminders: 'Nothing to remind you about', expenses: 'No expenses yet', invoices: 'No invoices yet', clients: 'No clients yet' };
   function decorateEmpty(name) {
     view.querySelectorAll('.card.empty').forEach(function (e) {
       if (e.dataset.done) return; e.dataset.done = 1;
@@ -222,8 +222,8 @@
   }
   function quickSheet() {
     var b = function (k, t, d) { return '<button type="button" class="qa" data-qa="' + k + '"><b>' + t + '</b><span>' + d + '</span></button>'; };
-    dlg.innerHTML = '<form method="dialog"><h2>Add something</h2><div class="qgrid">' + b('bill', '🧾 Bill', 'Electricity, water, gas, internet…') + b('purchase', '🛒 Purchase', 'Shopping, food, anything') + b('scan', '📷 Receipt', 'Photo → expense, automatic') + b('expense', '💸 Expense', 'Type it in') + b('income', '💰 Income', 'Salary or other') + b('sub', '🔁 Subscription', 'Netflix, gym, IPTV…') + b('loan', '🏦 Loan', 'Mortgage, car, credit') + b('invoice', '📄 Invoice', 'Bill a client') + b('goal', '🎯 Savings goal', 'Holidays, emergency fund') + b('spending', '📊 Save more', 'See where to cut') + '</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
-    dlg.onclose = null; dlg.showModal(); dlg.querySelectorAll('[data-qa]').forEach(function (b2) { b2.onclick = function () { quickAdd(b2.dataset.qa); }; });
+    dlg.innerHTML = '<form method="dialog"><h2>Add something</h2><div class="qgrid">' + '<button type="button" class="qa" id="qdoc" style="grid-column:1/-1"><b>📷 Invoice or receipt</b><span>Photo or PDF of any invoice — the AI fills it in</span></button>' + b('bill', '🧾 Bill', 'Electricity, water, gas, internet…') + b('purchase', '🛒 Purchase', 'Shopping, food, anything') + b('scan', '📷 Receipt', 'Photo → expense, automatic') + b('expense', '💸 Expense', 'Type it in') + b('income', '💰 Income', 'Salary or other') + b('sub', '🔁 Subscription', 'Netflix, gym, IPTV…') + b('loan', '🏦 Loan', 'Mortgage, car, credit') + b('invoice', '📄 Invoice', 'Bill a client') + b('goal', '🎯 Savings goal', 'Holidays, emergency fund') + b('spending', '📊 Save more', 'See where to cut') + '</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
+    dlg.onclose = null; dlg.showModal(); dlg.querySelectorAll('[data-qa]').forEach(function (b2) { b2.onclick = function () { quickAdd(b2.dataset.qa); }; }); var qd = dlg.querySelector('#qdoc'); if (qd) qd.onclick = function () { addDocSheet(); };
   }
   function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone; }
   function installApp() {
@@ -233,7 +233,7 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__installEvt = e; var b = $('#installbtn'); if (b) b.hidden = false; });
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]'); if (!t) return; var a = t.dataset.act;
-    if (a === 'theme') themeSheet(); else if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp(); else if (a === 'family') { if (dlg.open) dlg.close('x'); var jump = function () { var f = $('#family'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; if (location.hash !== '#/settings') { location.hash = '#/settings'; setTimeout(jump, 250); } else jump(); }
+    if (a === 'theme') themeSheet(); else if (a === 'search') searchSheet(); else if (a === 'lang') { try { localStorage.setItem('ledgerly.lang', localStorage.getItem('ledgerly.lang') === 'pt' ? 'en' : 'pt'); } catch (e) { } location.reload(); } else if (a === 'quick') quickSheet(); else if (a === 'adddoc') addDocSheet(); else if (a === 'more') moreSheet(); else if (a === 'install') installApp(); else if (a === 'family') { if (dlg.open) dlg.close('x'); var jump = function () { var f = $('#family'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; if (location.hash !== '#/settings') { location.hash = '#/settings'; setTimeout(jump, 250); } else jump(); }
   });
 
 
@@ -441,7 +441,7 @@
     draw();
   }
 
-  var BASE_CATS = ['Groceries', 'Food & drinks', 'Shopping', 'Entertainment', 'Gifts', 'Fuel', 'Health', 'Home', 'Software', 'Equipment', 'Travel', 'Office', 'Marketing', 'Taxes & fees', 'Services', 'Other'], CATS = BASE_CATS.slice();
+  var BASE_CATS = ['Groceries', 'Food & drinks', 'Shopping', 'Entertainment', 'Gifts', 'Fuel', 'Health', 'Home', 'Software', 'Equipment', 'Travel', 'Office', 'Marketing', 'Taxes & fees', 'Services', 'Car', 'Education', 'Other'], CATS = BASE_CATS.slice();
   function refreshCats() { var extra = (db.settings.cats || []).filter(function (c) { return BASE_CATS.indexOf(c) < 0; }); CATS.length = 0; BASE_CATS.slice(0, BASE_CATS.length - 1).concat(extra, ['Other']).forEach(function (c) { CATS.push(c); }); }
   function catSelect(cur) { return '<div><label>Category</label><select name="cat">' + CATS.map(function (c) { return '<option value="' + esc(c) + '" ' + (c === cur ? 'selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '<option value="__new">＋ New category…</option></select><input name="newcat" placeholder="Name of the new category" maxlength="28" hidden style="margin-top:6px"></div>'; }
   function wireCat() { var sel = dlg.querySelector('[name=cat]'), inp = dlg.querySelector('[name=newcat]'); if (sel && inp) sel.addEventListener('change', function () { sel.dataset.touched = 1; inp.hidden = sel.value !== '__new'; if (!inp.hidden) inp.focus(); }); }
@@ -454,7 +454,7 @@
       var l = db.expenses.slice().sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
       var sum = l.filter(function (e) { return (e.date || '').slice(0, 4) == y; }).reduce(function (a, e) { return a + num(e.amount); }, 0);
       $('#c').innerHTML = l.length ? '<table><thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th class="r">Amount</th><th></th></tr></thead><tbody>' + l.map(function (e) {
-        return '<tr><td class="mut">' + fdate(e.date) + '</td><td><b>' + esc(e.vendor) + '</b>' + (e.auto ? ' <span class="tag draft">auto – check</span>' : '') + (e.file ? ' <a href="#" data-f="' + e.id + '" title="Open attachment">📎</a>' : '') + '<div class="mut">' + esc(e.note) + '</div></td><td><span class="tag">' + esc(e.cat) + '</span></td><td class="r">' + money(num(e.amount)) + '</td><td class="r"><button class="btn s" data-e="' + e.id + '">Edit</button></td></tr>';
+        return '<tr><td class="mut">' + fdate(e.date) + '</td><td><b>' + esc(e.vendor) + '</b>' + (e.paid === false ? ' <span class="tag sent">to pay' + (e.due ? ' ' + fdate(e.due) : '') + '</span>' : '') + (e.auto ? ' <span class="tag draft">auto – check</span>' : '') + (e.file ? ' <a href="#" data-f="' + e.id + '" title="Open attachment">📎</a>' : '') + '<div class="mut">' + esc(e.note) + '</div></td><td><span class="tag">' + esc(e.cat) + '</span></td><td class="r">' + money(num(e.amount)) + '</td><td class="r"><button class="btn s" data-e="' + e.id + '">Edit</button></td></tr>';
       }).join('') + '</tbody></table><p class="mut" style="margin:12px 10px 0">Total in ' + y + ': <b style="color:var(--text)">' + money(sum) + '</b></p>' : '<div class="empty">No expenses yet.</div>';
     }
     function form(x, file) {
@@ -515,7 +515,7 @@
 
   function settings() {
     var s = db.settings;
-    view.innerHTML = '<div class="top"><h1>Settings</h1><button class="btn p" id="save">Save</button></div>' + '<div id="family" style="scroll-margin-top:12px">' + familyHtml() + '</div>' +
+    view.innerHTML = '<div class="top"><h1>Settings</h1><button class="btn p" id="save">Save</button></div>' + '<div id="family" style="scroll-margin-top:12px">' + familyHtml() + '</div>' + aiSettingsHtml() +
       '<div class="card" style="margin-top:14px"><h2>Your business</h2><div class="f">' + '<div class="w"><label>What do you use Ledgerly for?</label><select name="mode"><option value="both" ' + ((s.mode || 'both') === 'both' ? 'selected' : '') + '>Home and business</option><option value="home" ' + (s.mode === 'home' ? 'selected' : '') + '>Home & family only</option><option value="work" ' + (s.mode === 'work' ? 'selected' : '') + '>My business only</option></select></div>' + field('Your name / business name', 'name', s.name) + field('Tax ID', 'taxId', s.taxId) + field('Email', 'email', s.email, 'email') + field('IBAN', 'iban', s.iban) + '<div class="w"><label>Address</label><textarea name="address" rows="3">' + esc(s.address) + '</textarea></div></div></div>' +
       '<div class="card" style="margin-top:14px"><h2>Invoice defaults</h2><div class="f">' + field('Currency (ISO code)', 'currency', s.currency, 'text', 'maxlength="3"') + field('Default VAT %', 'vat', s.vat, 'text', 'inputmode="decimal"') + field('People sharing the household bills', 'people', s.people, 'number', 'min="1"') + field('Number prefix', 'prefix', s.prefix) + field('Payment terms (days)', 'terms', s.terms, 'number') +
       '<div class="w"><label>Default invoice footer</label><textarea name="footer" rows="2">' + esc(s.footer) + '</textarea></div></div></div>' +
@@ -526,7 +526,7 @@
       save(); applyMode(); toast('Settings saved');
     };
     $('#bk').onclick = function () { download(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }), 'ledgerly-backup-' + today() + '.json'); db.settings.lastExport = today(); save(); };
-    extraSettingsWire(); lookWire(); familyWire();
+    extraSettingsWire(); lookWire(); familyWire(); aiSettingsWire();
     $('#im').onchange = function (e) {
       var f = e.target.files[0]; if (!f) return; var r = new FileReader();
       r.onload = function () {
@@ -638,7 +638,8 @@
   }
   function upcoming() {
     var out = [];
-    db.bills.forEach(function (b) { if (b.due && b.paid === false) out.push({ d: b.due, t: BT[b.type].l + (b.provider ? ' · ' + b.provider : ''), a: b.amount, href: '#/bills' }); });
+    db.bills.forEach(function (b) { if (b.due && b.paid === false) out.push({ d: b.due, t: BT[b.type].l + (b.provider ? ' · ' + b.provider : ''), a: b.amount, href: '#/docs' }); });
+    db.expenses.forEach(function (e) { if (e.due && e.paid === false) out.push({ d: e.due, t: (e.vendor || e.cat || 'Expense') + (e.method === 'dd' ? ' (direct debit)' : ''), a: num(e.amount), href: '#/docs' }); });
     db.invoices.forEach(function (i) { var st = status(i); if ((st === 'sent' || st === 'overdue') && i.due) { var c = clientOf(i.clientId); out.push({ d: i.due, t: 'Invoice ' + i.number + ' (to receive)' + (c ? ' · ' + c.name : ''), a: totals(i).gross, href: '#/invoice/' + i.id, inc: true }); } });
     db.subs.forEach(function (x) { if (x.active === false) return; var r = nextRenewal(x); if (r && r <= addDays(today(), 14)) out.push({ d: r, t: x.name + ' (subscription)', a: x.amount, href: '#/subs' }); });
     db.deadlines.forEach(function (x) { var d = nextDeadline(x); if (d && d <= addDays(today(), 30)) out.push({ d: d, t: x.name, a: x.amount || 0, href: '#/reminders' }); });
@@ -1360,6 +1361,231 @@
   function readImage(file) {
     return loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js').then(function () { return Tesseract.recognize(file, 'por+eng'); }).then(function (r) { return r.data.text; });
   }
+
+  /* ---------- My bills: any invoice or receipt, read by AI, waiting until you mark it paid ----------
+     A photo or PDF goes in; the Groq AI reads the fields that matter for that kind of document (kWh and CPE on an
+     electricity bill, policy number on insurance, litres on fuel, the Multibanco reference on anything to pay…).
+     Home utilities are stored as bills (so the Utilities charts keep working); everything else as an expense.
+     Both carry paid / due / reference, and the "My bills" page lists what is still to pay. */
+  var DK = {
+    electricity: { l: 'Electricity', i: '💡', bill: 'electricity' }, water: { l: 'Water', i: '💧', bill: 'water' }, gas: { l: 'Gas', i: '🔥', bill: 'gas' },
+    internet: { l: 'Internet / TV', i: '📡', bill: 'internet' }, mobile: { l: 'Mobile', i: '📱', bill: 'mobile' }, insurance: { l: 'Insurance', i: '🛡️', bill: 'insurance' },
+    rent: { l: 'Rent / condo', i: '🏠', bill: 'rent' }, tax: { l: 'Taxes', i: '🏛️', cat: 'Taxes & fees' }, health: { l: 'Health', i: '🩺', cat: 'Health' },
+    education: { l: 'Education', i: '🎓', cat: 'Education' }, groceries: { l: 'Groceries', i: '🛒', cat: 'Groceries' }, food: { l: 'Restaurants', i: '🍽️', cat: 'Food & drinks' },
+    fuel: { l: 'Fuel', i: '⛽', cat: 'Fuel' }, shopping: { l: 'Shopping', i: '🛍️', cat: 'Shopping' }, car: { l: 'Car', i: '🚗', cat: 'Car' },
+    services: { l: 'Services', i: '🧰', cat: 'Services' }, travel: { l: 'Transport & travel', i: '🚆', cat: 'Travel' }, other: { l: 'Other', i: '📄', cat: 'Other' }
+  };
+  var AI_TYPES = { luz: 'electricity', agua: 'water', gas: 'gas', internet: 'internet', telemovel: 'mobile', seguro: 'insurance', renda: 'rent', condominio: 'rent', imposto: 'tax', saude: 'health', educacao: 'education', supermercado: 'groceries', restaurante: 'food', combustivel: 'fuel', compras: 'shopping', carro: 'car', servicos: 'services', transportes: 'travel', outro: 'other' };
+  var BILL2K = { electricity: 'electricity', water: 'water', gas: 'gas', internet: 'internet', mobile: 'mobile', insurance: 'insurance', rent: 'rent', other: 'other' };
+  function catKind(cat) { for (var k in DK) if (DK[k].cat === cat) return k; return 'other'; }
+  function docKind(o) { return o.src === 'bill' ? (o.x.kind || BILL2K[o.x.type] || 'other') : (o.x.kind || catKind(o.x.cat)); }
+  function allDocs() {
+    return db.bills.map(function (x) { return { src: 'bill', x: x }; }).concat(db.expenses.map(function (x) { return { src: 'exp', x: x }; }));
+  }
+  function isPaid(x) { return x.paid !== false; }
+  function docName(o) { return o.src === 'bill' ? (o.x.provider || BT[o.x.type].l) : (o.x.vendor || o.x.note || 'Expense'); }
+  function docDate(o) { return o.x.date || ''; }
+  function autoDebits() {            // direct debits pay themselves on the due date
+    var n = 0; allDocs().forEach(function (o) { var x = o.x; if (x.paid === false && x.method === 'dd' && x.due && x.due <= today()) { x.paid = true; x.paidOn = x.due; n++; } });
+    if (n) save(); return n;
+  }
+  function daysTo(iso) { return Math.round((new Date(iso + 'T12:00:00') - new Date(today() + 'T12:00:00')) / 864e5); }
+  function dueTag(x) {
+    if (isPaid(x)) return '<span class="tag paid"><span>paid</span>' + (x.paidOn ? ' ' + fdate(x.paidOn) : '') + '</span>';
+    if (!x.due) return '<span class="tag sent">to pay</span>';
+    var d = daysTo(x.due);
+    if (x.method === 'dd') return '<span class="tag sent"><span>direct debit</span> ' + fdate(x.due) + '</span>';
+    return d < 0 ? '<span class="tag overdue"><span>overdue by</span> ' + (-d) + ' <span>' + (d === -1 ? 'day' : 'days') + '</span></span>' : d === 0 ? '<span class="tag overdue">due today</span>' : '<span class="tag ' + (d <= 7 ? 'draft' : 'sent') + '">' + d + ' <span>' + (d === 1 ? 'day left' : 'days left') + '</span></span>';
+  }
+  var docsTab = 'pay';
+  function docsPage() {
+    autoDebits();
+    var L = allDocs(), unpaid = L.filter(function (o) { return !isPaid(o.x); }).sort(function (a, b) { return (a.x.due || '9999').localeCompare(b.x.due || '9999'); });
+    var mk = today().slice(0, 7), month = L.filter(function (o) { return (docDate(o)).slice(0, 7) === mk || (o.x.paidOn || '').slice(0, 7) === mk; });
+    var late = unpaid.filter(function (o) { return o.x.due && o.x.due < today() && o.x.method !== 'dd'; });
+    var sumU = unpaid.reduce(function (a, o) { return a + num(o.x.amount); }, 0), sumM = month.reduce(function (a, o) { return a + num(o.x.amount); }, 0);
+    var recent = L.filter(function (o) { return o.x.doc; }).sort(function (a, b) { return (b.x.added || docDate(b)).localeCompare(a.x.added || docDate(a)); });
+    var list = docsTab === 'pay' ? unpaid : docsTab === 'month' ? month.sort(function (a, b) { return docDate(b).localeCompare(docDate(a)); }) : recent;
+    view.innerHTML = '<div class="top"><div><h1>My bills</h1><div class="mut">Every invoice and receipt in one place</div></div></div>' +
+      '<div class="docadd card"><div><b>Add an invoice or receipt</b><div class="mut">Photo or PDF. The AI reads it and fills everything in.</div></div><div class="row">' +
+      '<label class="btn p" style="margin:0">📷 Take photo<input type="file" id="dcam" accept="image/*" capture="environment" hidden></label>' +
+      '<label class="btn" style="margin:0">📎 Choose files<input type="file" id="dfile" accept="image/*,application/pdf" multiple hidden></label></div></div>' +
+      '<div class="dkpi">' + kpi('To pay', money(sumU), sumU ? '' : 'ok') + kpi('Overdue', String(late.length), late.length ? 'bad' : 'ok') + kpi('This month', money(sumM)) + '</div>' +
+      '<div class="row" style="margin-bottom:12px">' + [['pay', '<span>To pay</span> (' + unpaid.length + ')'], ['month', 'This month'], ['all', 'All read by AI']].map(function (t) { return '<button class="btn s ' + (docsTab === t[0] ? 'p' : '') + '" data-dt="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+      (list.length ? '<div class="doclist">' + list.map(docCard).join('') + '</div>' : '<div class="card empty">' + (docsTab === 'pay' ? 'Nothing to pay. 🎉 Take a photo of the next invoice that arrives and it waits here until you pay it.' : 'Nothing here yet. Add a photo or PDF of any invoice or receipt: electricity, supermarket, insurance, pharmacy, taxes…') + '</div>');
+    $('#dcam').onchange = function (e) { readDocs(e.target.files); e.target.value = ''; };
+    $('#dfile').onchange = function (e) { readDocs(e.target.files); e.target.value = ''; };
+    view.onclick = function (e) {
+      var t = e.target.closest('[data-dt]'); if (t) { docsTab = t.dataset.dt; docsPage(); return; }
+      var c = e.target.closest('[data-cp]'); if (c) { e.preventDefault(); copyTxt(c.dataset.cp); return; }
+      var f = e.target.closest('[data-f]'); if (f) { e.preventDefault(); openAttach(f.dataset.f); return; }
+      var p = e.target.closest('[data-pay]'); if (p) { var o = findDoc(p.dataset.pay); if (o) { o.x.paid = true; o.x.paidOn = today(); save(); docsPage(); toast('Marked as paid ✓'); } return; }
+      var u = e.target.closest('[data-unpay]'); if (u) { var o2 = findDoc(u.dataset.unpay); if (o2) { o2.x.paid = false; delete o2.x.paidOn; save(); docsPage(); } return; }
+      var ed = e.target.closest('[data-ed]'); if (ed) { var o3 = findDoc(ed.dataset.ed); if (o3) docReview(null, o3); }
+    };
+  }
+  function findDoc(id) { return allDocs().filter(function (o) { return o.x.id === id; })[0]; }
+  function copyTxt(s) { try { navigator.clipboard.writeText(s.replace(/\s/g, '')); toast('Copied ✓'); } catch (e) { toast(s); } }
+  function docCard(o) {
+    var x = o.x, k = DK[docKind(o)] || DK.other, D = x.doc || {};
+    var ref = D.ent && D.ref ? '<div class="mbref"><span>MB</span> <i>Entity</i> <b data-cp="' + esc(D.ent) + '">' + esc(D.ent) + '</b> · <i>Ref.</i> <b data-cp="' + esc(D.ref) + '">' + esc(D.ref) + '</b> <small class="mut">tap to copy</small></div>' : D.iban && !isPaid(x) ? '<div class="mbref">IBAN <b data-cp="' + esc(D.iban) + '">' + esc(D.iban) + '</b></div>' : '';
+    var extra = (D.fields || []).slice(0, 4).map(function (f) { return '<span>' + esc(f.n) + ': <b>' + esc(f.v) + '</b></span>'; }).join('');
+    return '<div class="card doc ' + (isPaid(x) ? 'is-paid' : x.due && x.due < today() && x.method !== 'dd' ? 'is-late' : '') + '"><div class="dico">' + k.i + '</div><div class="dmain">' +
+      '<div class="dtop"><b>' + esc(docName(o)) + '</b><b class="damt">' + money(num(x.amount)) + '</b></div>' +
+      '<div class="mut"><span>' + k.l + '</span>' + (D.number ? ' · Nº ' + esc(D.number) : '') + ' · ' + fdate(docDate(o)) + (x.due && !isPaid(x) ? ' · <span>pay by</span> ' + fdate(x.due) : '') + ' ' + dueTag(x) + '</div>' +
+      (extra ? '<div class="dext">' + extra + '</div>' : '') + ref +
+      '<div class="row dact">' + (isPaid(x) ? '<button class="btn s" data-unpay="' + x.id + '">Not paid after all</button>' : '<button class="btn s p" data-pay="' + x.id + '">✓ I paid it</button>') +
+      (x.file ? '<a href="#" class="btn s" data-f="' + x.id + '">📎 Open</a>' : '') + '<button class="btn s" data-ed="' + x.id + '">Edit</button></div></div></div>';
+  }
+
+  /* --- reading --- */
+  var GROQ_MODELS_V = ['meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct', 'qwen/qwen3.8-27b', 'qwen/qwen3.6-27b'];
+  var GROQ_MODELS_T = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'meta-llama/llama-4-scout-17b-16e-instruct'];
+  function groqKey() { var k = lsGet('ledgerly.groq') || window.LEDGERLY_GROQ_KEY || ''; return /^__/.test(k) ? '' : k; }
+  var groqHave = null;
+  function groqModels() {
+    if (groqHave) return Promise.resolve(groqHave);
+    return fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: 'Bearer ' + groqKey() } }).then(function (r) { return r.json(); }).then(function (j) { groqHave = (j.data || []).map(function (m) { return m.id; }); return groqHave; }).catch(function () { return []; });
+  }
+  function pickModel(list, have) { return list.filter(function (m) { return have.indexOf(m) > -1; })[0] || list[0]; }
+  function groqAsk(content, vision) {
+    return groqModels().then(function (have) {
+      return fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + groqKey() },
+        body: JSON.stringify({ model: pickModel(vision ? GROQ_MODELS_V : GROQ_MODELS_T, have), temperature: 0.1, messages: [{ role: 'user', content: content }] })
+      });
+    }).then(function (r) { if (!r.ok) throw new Error('groq ' + r.status); return r.json(); }).then(function (j) {
+      var t = String(((j.choices || [])[0] || {}).message ? j.choices[0].message.content : '').replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```json|```/g, '');
+      var a = t.indexOf('{'), b = t.lastIndexOf('}'); return JSON.parse(a >= 0 && b > a ? t.slice(a, b + 1) : t);
+    });
+  }
+  var DOC_PROMPT = 'És um assistente de contabilidade doméstica em Portugal. Lê este documento (fatura, fatura-recibo, recibo, talão, nota de cobrança, aviso de pagamento) e extrai os dados importantes PARA ESTE TIPO de documento.\n' +
+    'Tipos: luz, agua, gas, internet (inclui TV/fibra), telemovel, seguro, renda, condominio, imposto (IMI, IUC, IRS, Segurança Social, coimas), saude (farmácia, clínica, hospital), educacao, supermercado, restaurante, combustivel, compras, carro (oficina, portagens, estacionamento, inspeção), servicos, transportes, outro.\n' +
+    'Campos específicos a pôr em "campos" (só os que aparecerem, no máximo 6, nome curto em português): luz: consumo kWh, potência contratada (kVA), CPE, período; agua: consumo m³, nº de cliente, contador, período; gas: consumo, CUI, período; internet/telemovel: nº de cliente, nº de telefone ou serviço, período; seguro: apólice, ramo, objeto seguro (matrícula, morada), período coberto; renda/condominio: mês, fração ou morada; imposto: imposto, ano, nº do documento/nota de cobrança; saude: utente, comparticipação; supermercado/restaurante/compras: nº de artigos, forma de pagamento; combustivel: combustível, litros, preço por litro; carro: matrícula, serviço.\n' +
+    'Estado do pagamento: "pago" se for fatura-recibo, recibo, talão de compra ou disser pago/liquidado; "debito_direto" se disser débito direto/débito em conta/cobrança automática; senão "por_pagar".\n' +
+    'Datas em AAAA-MM-DD. Valores em número com ponto decimal. Não inventes: o que não estiver no documento fica "" ou 0.\n' +
+    'Responde APENAS com JSON: {"tipo":"","emissor":"","nif_emissor":"","numero":"","data":"","data_limite":"","total":0,"iva":0,"estado":"por_pagar|pago|debito_direto","mb_entidade":"","mb_referencia":"","iban":"","consumo":0,"campos":[{"nome":"","valor":""}],"resumo":"uma frase curta"}';
+  function shrinkImage(file, max) {
+    return new Promise(function (ok, no) {
+      var img = new Image(), u = URL.createObjectURL(file);
+      img.onload = function () { var s = Math.min(1, (max || 1600) / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', .85)); };
+      img.onerror = function () { URL.revokeObjectURL(u); no(new Error('image')); }; img.src = u;
+    });
+  }
+  function pdfFirstPage(file) {
+    var V = '3.11.174', B = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + V + '/';
+    return loadScript(B + 'pdf.min.js').then(function () { pdfjsLib.GlobalWorkerOptions.workerSrc = B + 'pdf.worker.min.js'; return file.arrayBuffer(); })
+      .then(function (buf) { return pdfjsLib.getDocument({ data: buf }).promise; }).then(function (pdf) { return pdf.getPage(1); })
+      .then(function (p) { var vp = p.getViewport({ scale: 2 }), c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; return p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () { return c.toDataURL('image/jpeg', .85); }); });
+  }
+  function aiRead(file) {
+    if (file.type === 'application/pdf') {
+      return readPdf(file).then(function (text) {
+        if (text && text.replace(/\s/g, '').length > 120) return groqAsk(DOC_PROMPT + '\n\nTexto do PDF:\n' + text.slice(0, 14000), false);
+        return pdfFirstPage(file).then(function (u) { return groqAsk([{ type: 'text', text: DOC_PROMPT }, { type: 'image_url', image_url: { url: u } }], true); });
+      });
+    }
+    return shrinkImage(file, 1600).then(function (u) { return groqAsk([{ type: 'text', text: DOC_PROMPT }, { type: 'image_url', image_url: { url: u } }], true); });
+  }
+  function isoOk(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : ''; }
+  function fromAI(r) {
+    r = r || {}; var k = AI_TYPES[String(r.tipo || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')] || 'other';
+    var est = String(r.estado || '');
+    return {
+      kind: k, emitter: String(r.emissor || '').trim(), nif: String(r.nif_emissor || '').replace(/\D/g, ''), number: String(r.numero || '').trim(),
+      date: isoOk(r.data) || today(), due: isoOk(r.data_limite), amount: +r.total || '', vat: +r.iva || 0, usage: +r.consumo || '',
+      status: est === 'pago' ? 'paid' : est === 'debito_direto' ? 'dd' : 'topay', ent: String(r.mb_entidade || '').replace(/\D/g, ''), ref: String(r.mb_referencia || '').replace(/[^\d ]/g, '').trim(), iban: String(r.iban || '').replace(/\s+/g, ' ').trim(),
+      fields: (Array.isArray(r.campos) ? r.campos : []).filter(function (f) { return f && f.nome && f.valor; }).slice(0, 6).map(function (f) { return { n: String(f.nome).slice(0, 30), v: String(f.valor).slice(0, 60) }; }),
+      summary: String(r.resumo || '')
+    };
+  }
+  function fromOCR(text) {                   // fallback without AI: the old rules
+    var b = parseBill(text), rc = parseReceipt(text), isBill = b.type && b.type !== 'other';
+    return { kind: isBill ? BILL2K[b.type] : catKind(rc.cat), emitter: b.provider || rc.vendor || '', date: b.date || rc.date || today(), amount: b.amount || rc.amount || '', usage: b.usage || '', status: isBill ? 'topay' : 'paid', fields: [], due: '', ent: '', ref: '', iban: '', nif: '', number: '' };
+  }
+  var docQueue = [];
+  function readDocs(files) {
+    files = Array.prototype.slice.call(files || []); if (!files.length) return;
+    docQueue = docQueue.concat(files); if (docQueue.length === files.length) nextDoc();
+  }
+  function nextDoc() {
+    var f = docQueue[0]; if (!f) return;
+    var left = docQueue.length;
+    busy('Reading the invoice…', f.name + (left > 1 ? ' · ' + left : ''));
+    var job = groqKey() ? aiRead(f).then(fromAI) : readFile(f).then(fromOCR);
+    job.then(function (p) { busy(); docReview(p, null, f); }).catch(function (e) {
+      console.error(e); busy();
+      toast(String(e && e.message).indexOf('429') > -1 ? 'Too many requests to the AI. Wait a minute.' : 'Could not read it. Fill it in by hand.');
+      docReview({ kind: 'other', date: today(), status: 'topay', fields: [] }, null, f);
+    });
+  }
+  function doneDoc() { docQueue.shift(); if (docQueue.length) setTimeout(nextDoc, 300); else if ((location.hash || '#/').replace(/^#\/?/, '') === '' || /^#\/docs/.test(location.hash)) docsPage(); }
+  function busy(msg, small) {
+    var b = $('#busy'); if (!b) { b = document.createElement('div'); b.id = 'busy'; document.body.appendChild(b); }
+    if (!msg) { b.classList.remove('on'); return; } b.innerHTML = '<div><i></i><p style="margin:0">' + esc(msg) + (small ? '<br><small class="mut">' + esc(small) + '</small>' : '') + '</p></div>'; b.classList.add('on');
+  }
+  /* review / edit: same form for a new read and for editing a saved bill or expense */
+  function docReview(p, o, file) {
+    var x = o ? o.x : null, isNew = !o;
+    if (o) { var D = x.doc || {}; p = { kind: docKind(o), emitter: docName(o), nif: D.nif || '', number: D.number || '', date: x.date, due: x.due || '', amount: x.amount, usage: x.usage || '', vat: x.vat, status: isPaid(x) ? 'paid' : x.method === 'dd' ? 'dd' : 'topay', ent: D.ent || '', ref: D.ref || '', iban: D.iban || '', fields: D.fields || [], note: x.note || '' }; }
+    var dup = isNew && allDocs().filter(function (q) { var D = q.x.doc || {}; return (p.number && D.number === p.number && (!p.nif || D.nif === p.nif)) || (p.amount && num(q.x.amount) === +p.amount && docDate(q) === p.date && docName(q).toLowerCase() === String(p.emitter || '').toLowerCase()); })[0];
+    var fl = (p.fields || []).concat([{ n: '', v: '' }, { n: '', v: '' }]).slice(0, 8);
+    ask('<h2>' + (isNew ? 'Check the invoice' : 'Edit') + '</h2>' + (isNew ? '<p class="mut" style="margin-top:-6px"><span>' + (groqKey() ? 'Read by AI. Check the values before saving.' : 'Read without AI (turn it on in Settings for better results). Check the values.') + '</span>' + (p.summary ? '<br><i>' + esc(p.summary) + '</i>' : '') + '</p>' : '') +
+      (dup ? '<p class="warnbox"><span>⚠️ This looks like one you already have:</span> ' + esc(docName(dup)) + ' · ' + money(num(dup.x.amount)) + ' · ' + fdate(docDate(dup)) + '</p>' : '') +
+      '<div class="f"><div><label>Type</label><select name="kind">' + Object.keys(DK).map(function (k) { return '<option value="' + k + '" ' + (k === p.kind ? 'selected' : '') + '>' + DK[k].i + ' ' + DK[k].l + '</option>'; }).join('') + '</select></div>' +
+      field('From (company / shop)', 'emitter', p.emitter || '') + field('Total', 'amount', p.amount || '', 'text', 'inputmode="decimal" required') +
+      '<div><label>Status</label><select name="status"><option value="topay" ' + (p.status === 'topay' ? 'selected' : '') + '>To pay</option><option value="dd" ' + (p.status === 'dd' ? 'selected' : '') + '>Direct debit (pays itself)</option><option value="paid" ' + (p.status === 'paid' ? 'selected' : '') + '>Already paid</option></select></div>' +
+      field('Date', 'date', p.date || today(), 'date') + field('Pay by', 'due', p.due || '', 'date') +
+      field('Invoice nº', 'number', p.number || '') + field('Issuer VAT nº (NIF)', 'nif', p.nif || '', 'text', 'inputmode="numeric"') +
+      field('Multibanco entity', 'ent', p.ent || '', 'text', 'inputmode="numeric"') + field('Multibanco reference', 'ref', p.ref || '', 'text', 'inputmode="numeric"') +
+      field('IBAN (transfer)', 'iban', p.iban || '') + field('Usage (kWh / m³)', 'usage', p.usage || '', 'text', 'inputmode="decimal"') +
+      '<div class="w"><label>Details for this type</label><div class="kv">' + fl.map(function (f, i) { return '<input name="fn' + i + '" value="' + esc(f.n) + '" placeholder="e.g. Policy nº"><input name="fv' + i + '" value="' + esc(f.v) + '" placeholder="value">'; }).join('') + '</div></div>' +
+      '<div class="w">' + field('Note', 'note', p.note || '') + '</div>' + (isNew ? '' : attachField(x)) + '</div>' +
+      (isNew ? '' : '<p><button type="button" class="btn s d" id="rm">Delete</button></p>'), function (d) {
+      var a = num(val(d, 'amount')); if (!(a > 0)) { toast('Enter the total'); return; }
+      var k = val(d, 'kind'), st = val(d, 'status'), fields = [];
+      for (var i = 0; i < 8; i++) { var n = val(d, 'fn' + i), v = val(d, 'fv' + i); if (n && v) fields.push({ n: n, v: v }); }
+      var doc = { nif: val(d, 'nif').replace(/\D/g, ''), number: val(d, 'number'), ent: val(d, 'ent').replace(/\D/g, ''), ref: val(d, 'ref'), iban: val(d, 'iban'), fields: fields };
+      var wantBill = !!DK[k].bill;
+      if (o && (o.src === 'bill') !== wantBill) { // type changed between a home bill and an expense: move it
+        if (o.src === 'bill') db.bills = db.bills.filter(function (y) { return y.id !== x.id; }); else db.expenses = db.expenses.filter(function (y) { return y.id !== x.id; });
+        isNew = true;
+      }
+      var it = x || { id: uid(), added: new Date().toISOString() };
+      if (wantBill) { it.type = DK[k].bill; it.provider = val(d, 'emitter'); delete it.vendor; delete it.cat; }
+      else { it.vendor = val(d, 'emitter') || DK[k].l; it.cat = DK[k].cat; if (CATS.indexOf(it.cat) < 0) { db.settings.cats = db.settings.cats || []; if (db.settings.cats.indexOf(it.cat) < 0) db.settings.cats.push(it.cat); refreshCats(); } delete it.type; delete it.provider; }
+      it.kind = k; it.amount = a; it.date = val(d, 'date') || today(); it.due = val(d, 'due'); it.usage = num(val(d, 'usage')) || ''; it.note = val(d, 'note'); it.doc = doc;
+      it.method = st === 'dd' ? 'dd' : ''; if (st === 'paid') { it.paid = true; it.paidOn = it.paidOn || (p.status === 'paid' ? it.date : today()); } else { it.paid = false; delete it.paidOn; }
+      if (file) saveAttach(it, d, file); else if (!isNew || x) saveAttach(it, d);
+      if (isNew) (wantBill ? db.bills : db.expenses).push(it);
+      save(); toast(st === 'paid' ? 'Saved as paid' : it.due ? 'Saved — waiting for payment until ' + fdate(it.due) : 'Saved — waiting for payment');
+      if (file) doneDoc(); else docsPage();
+    }, isNew ? 'Save' : 'Save');
+    var okClose = dlg.onclose;
+    dlg.onclose = function () { var ok = dlg.returnValue === 'ok'; okClose(); if (file && !ok && docQueue[0] === file) doneDoc(); };
+    var rm = dlg.querySelector('#rm'); if (rm) rm.onclick = function () { if (o.src === 'bill') db.bills = db.bills.filter(function (y) { return y.id !== x.id; }); else db.expenses = db.expenses.filter(function (y) { return y.id !== x.id; }); idbDel(x.id); save(); dlg.close('x'); docsPage(); };
+  }
+  function addDocSheet() {
+    dlg.innerHTML = '<form method="dialog"><h2>Add an invoice or receipt</h2><p class="mut">Electricity, water, phone, insurance, supermarket, pharmacy, fuel, taxes… The AI reads it and it waits until you pay.</p><div class="qgrid">' +
+      '<label class="qa"><b>📷 Take photo</b><span>Paper invoice or receipt</span><input type="file" id="qcam" accept="image/*" capture="environment" hidden></label>' +
+      '<label class="qa"><b>📎 Photo or PDF</b><span>From the gallery, email or files — several at once</span><input type="file" id="qfile" accept="image/*,application/pdf" multiple hidden></label>' +
+      '<button type="button" class="qa" id="qother"><b>✍️ Something else</b><span>Income, subscription, loan, purchase by hand…</span></button></div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
+    dlg.onclose = null; dlg.showModal();
+    ['#qcam', '#qfile'].forEach(function (s) { dlg.querySelector(s).onchange = function (e) { var fs = Array.prototype.slice.call(e.target.files); dlg.close('x'); readDocs(fs); }; });
+    dlg.querySelector('#qother').onclick = function () { quickSheet(); };
+  }
+  function aiSettingsHtml() {
+    var site = window.LEDGERLY_GROQ_KEY && !/^__/.test(window.LEDGERLY_GROQ_KEY), mine = lsGet('ledgerly.groq');
+    return '<div class="card" style="margin-top:14px" id="aiset"><h2>🤖 Reading invoices with AI <span class="tag ' + (groqKey() ? 'paid">on' : 'draft">off') + '</span></h2>' +
+      '<p class="mut">Photos and PDFs of invoices are sent to the Groq AI only to read them; nothing is kept there. Without AI, the app reads them on this device with simpler rules.</p>' +
+      (site ? '<p>✅ The key is already built into this site.</p>' : '') +
+      '<div class="row"><input id="gkey" type="password" placeholder="' + (mine ? 'Key saved on this device' : 'Groq API key (gsk_…), only if needed') + '" style="flex:1;min-width:220px"><button class="btn" id="gsave">Save key</button>' + (mine ? '<button class="btn d" id="gdel">Remove</button>' : '') + '</div></div>';
+  }
+  function aiSettingsWire() {
+    var s = $('#gsave'); if (s) s.onclick = function () { var v = $('#gkey').value.trim(); if (!/^gsk_/.test(v)) { toast('That does not look like a Groq key'); return; } lsSet('ledgerly.groq', v); groqHave = null; toast('Key saved on this device'); settings(); };
+    var r = $('#gdel'); if (r) r.onclick = function () { lsSet('ledgerly.groq', null); toast('Key removed'); settings(); };
+  }
+
   window.__ledgerly = window.__ledgerly || {}; window.__ledgerly.parseBill = parseBill;
   window.__ledgerly.parseReceipt = function (t) { return parseReceipt(t); };
 
@@ -1390,6 +1616,6 @@
       .forEach(function (e) { db.expenses.push({ id: uid(), date: e[0], vendor: e[1], cat: e[2], amount: e[3], note: '' }); });
   }
 
-  applyTheme(); refreshCats(); applyMode(); runRecurring(); route(); lock(); notifyDue(); setTimeout(runSync, 1500);
+  applyTheme(); refreshCats(); applyMode(); runRecurring(); autoDebits(); route(); lock(); notifyDue(); setTimeout(runSync, 1500);
   if (!location.hash) location.hash = '#/';
 })();

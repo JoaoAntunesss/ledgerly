@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ledgerly — invoices & expenses</title>
+<title>Ledgerly — bills, receipts & money</title>
 <meta name="description" content="Local-first invoicing and expense tracking. No account, no server: your data stays in your browser.">
 <meta name="color-scheme" content="light dark">
 <link rel="manifest" href="manifest.json">
@@ -16,7 +16,8 @@
   <nav id="nav">
     <div class="logo"><span>L</span>edgerly</div>
     <button id="srch" data-act="search">🔍 <span>Search</span><kbd>Ctrl K</kbd></button>
-    <a href="#/" data-r="dashboard">🏠 Home</a>
+    <a href="#/" data-r="docs">📥 My bills</a>
+    <a href="#/dashboard" data-r="dashboard">🏠 Summary</a>
     <small class="sec g-home">Home & family</small>
     <a class="g-home" href="#/spending" data-r="spending">📊 Spending</a>
     <a class="g-home" href="#/bills" data-r="bills">🧾 Utilities</a>
@@ -41,15 +42,16 @@
   <main id="view"></main>
 </div>
 <dialog id="dlg"></dialog>
-<button id="fab" data-act="quick" aria-label="Add something">＋</button>
+<button id="fab" data-act="adddoc" aria-label="Add an invoice">📷</button>
 <nav id="tabbar" aria-label="Main">
-  <a href="#/" data-r="dashboard"><i>🏠</i><span>Home</span></a>
-  <a href="#/bills" data-r="bills"><i>🧾</i><span>Bills</span></a>
-  <button data-act="quick" class="plus" aria-label="Add something">＋</button>
+  <a href="#/" data-r="docs"><i>📥</i><span>My bills</span></a>
+  <a href="#/dashboard" data-r="dashboard"><i>🏠</i><span>Summary</span></a>
+  <button data-act="adddoc" class="plus" aria-label="Add an invoice">📷</button>
   <a href="#/spending" data-r="spending"><i>📊</i><span>Spending</span></a>
   <button data-act="more"><i>☰</i><span>More</span></button>
 </nav>
 <div id="toast" role="status"></div>
+<script src="js/config.js"></script>
 <script src="js/app.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/fx.js"></script>

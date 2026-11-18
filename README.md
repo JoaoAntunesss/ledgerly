@@ -14,6 +14,14 @@
 
 ## Features
 
+**My bills — any invoice or receipt, read by AI (opens first)**
+- Take a photo or pick photos/PDFs (several at once) of **any** invoice or receipt: electricity, water, gas, internet, phone, insurance, rent, taxes, pharmacy, supermarket, restaurant, fuel, car, services…
+- The Groq AI reads the fields that matter for that kind of document (kWh, contracted power and CPE on electricity; policy nº on insurance; litres on fuel; tax and year on IMI/IUC; Multibanco entity/reference, NIF, invoice nº, due date on anything to pay) and you confirm before saving. Duplicates are flagged.
+- Unpaid ones wait in **To pay** with days left / overdue, the MB reference ready to copy, and **✓ I paid it**. Direct debits mark themselves paid on the due date. Receipts already paid go straight into spending.
+- Home utilities are stored as bills (so the Utilities charts keep working) and everything else as expenses, so Summary and Spending include them.
+- AI key: the repository secret `GROQ_API_KEY` is injected when GitHub Actions publishes the site (`.github/workflows/pages.yml`), or paste a key in Settings. Without a key the app falls back to on-device OCR.
+
+
 **Home & family**
 - **Utilities** — electricity, water, gas, internet, mobile, insurance, rent. Trend charts, change vs previous bill and vs a year ago, and every increase split into *price per unit* vs *usage*. Alerts for price jumps and possible water leaks, due-date reminders, next-bill forecast from a meter reading, optional per-person split, and an **offer comparison** (enter a tariff from the [ERSE simulator](https://www.erse.pt/simuladores/precos-de-energia/) to see the yearly saving).
 - **Subscriptions** — streaming, IPTV, music, cloud, gaming, gym, domains… totals per month/year/category, renewal reminders, free-trial flags, price-rise alerts, shared plans, and a checklist of subscriptions people usually forget.

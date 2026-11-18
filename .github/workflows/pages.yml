@@ -1,0 +1,34 @@
+name: Publicar site
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Chave do Groq (segredo GROQ_API_KEY)
+        env: { GROQ: '${{ secrets.GROQ_API_KEY }}' }
+        run: |
+          if [ -z "$GROQ" ]; then echo "::warning::Falta o segredo GROQ_API_KEY: a leitura de faturas com IA fica desligada (pode pôr-se a chave nas Definições)."; exit 0; fi
+          python3 -c "import os,pathlib; p=pathlib.Path('js/config.js'); p.write_text(p.read_text().replace('__GROQ_API_KEY__', os.environ['GROQ']))"
+      - name: Versão no service worker
+        run: sed -i "s/ledgerly-v24/ledgerly-${GITHUB_SHA::7}/" sw.js
+      - name: Preparar
+        run: mkdir _site && cp -r index.html style.css manifest.json sw.js icon-192.png icon-512.png js fonts _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deploy
+        uses: actions/deploy-pages@v4
