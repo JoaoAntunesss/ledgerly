@@ -24,7 +24,7 @@ jobs:
           if [ -z "$GROQ" ]; then echo "::warning::Falta o segredo GROQ_API_KEY: a leitura de faturas com IA fica desligada (pode pôr-se a chave nas Definições)."; exit 0; fi
           python3 -c "import os,pathlib; p=pathlib.Path('js/config.js'); p.write_text(p.read_text().replace('__GROQ_API_KEY__', os.environ['GROQ']))"
       - name: Versão no service worker
-        run: sed -i "s/ledgerly-v24/ledgerly-${GITHUB_SHA::7}/" sw.js
+        run: sed -i "s/ledgerly-v25/ledgerly-${GITHUB_SHA::7}/" sw.js
       - name: Preparar
         run: mkdir _site && cp -r index.html style.css manifest.json sw.js icon-192.png icon-512.png js fonts _site/
       - uses: actions/configure-pages@v5

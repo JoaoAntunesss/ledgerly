@@ -14,13 +14,15 @@
 
 ## Features
 
-**My bills — any invoice or receipt, read by AI (opens first)**
-- Take a photo or pick photos/PDFs (several at once) of **any** invoice or receipt: electricity, water, gas, internet, phone, insurance, rent, taxes, pharmacy, supermarket, restaurant, fuel, car, services…
-- The Groq AI reads the fields that matter for that kind of document (kWh, contracted power and CPE on electricity; policy nº on insurance; litres on fuel; tax and year on IMI/IUC; Multibanco entity/reference, NIF, invoice nº, due date on anything to pay) and you confirm before saving. Duplicates are flagged.
-- Unpaid ones wait in **To pay** with days left / overdue, the MB reference ready to copy, and **✓ I paid it**. Direct debits mark themselves paid on the due date. Receipts already paid go straight into spending.
-- Home utilities are stored as bills (so the Utilities charts keep working) and everything else as expenses, so Summary and Spending include them.
-- AI key: the repository secret `GROQ_API_KEY` is injected when GitHub Actions publishes the site (`.github/workflows/pages.yml`), or paste a key in Settings. Without a key the app falls back to on-device OCR.
-
+**My bills — any invoice or receipt (opens first)**
+- Photo or PDF of **any** invoice or receipt (several at once, or sent with Android *Share → Ledgerly*). The Portuguese tax **QR code** is read on the device (issuer and buyer NIF, type, date, nº, ATCUD, VAT, total); the Groq AI reads the rest (kind of bill, kWh, policy nº, Multibanco reference, due date, products with warranty). You confirm before saving; duplicates are flagged.
+- Unpaid ones wait in **To pay** with days left / overdue, MB reference to copy, **✓ I paid it** and **partial payments**. Direct debits pay themselves on the due date. A warning appears when a monthly bill has not arrived.
+- **Rules per company**: type, IRS sector and direct debit are remembered for the next invoices.
+- **Month**: calendar of what is due and paid, the next 30 days (bills, subscriptions, loans, income) with the expected balance, and **Ask the AI** about your money (only totals are sent).
+- **IRS**: every invoice has its e-Fatura sector; a page adds them up per year with a simple estimate of the deductions and flags invoices without your NIF. Reminder to validate e-Fatura in January–February.
+- **Warranties**: products from an invoice are saved with the invoice attached (3 years by default), with a warning before they end.
+- **Reminders with the app closed**: on Android, with the app installed and notifications on, the service worker checks due bills a few times a day (periodic background sync) and the notification has an *I paid it* button.
+- AI key: the repository secret `GROQ_API_KEY` is injected when GitHub Actions publishes the site (`.github/workflows/pages.yml`), or paste a key in Settings. Without a key the QR code and on-device OCR still work.
 
 **Home & family**
 - **Utilities** — electricity, water, gas, internet, mobile, insurance, rent. Trend charts, change vs previous bill and vs a year ago, and every increase split into *price per unit* vs *usage*. Alerts for price jumps and possible water leaks, due-date reminders, next-bill forecast from a meter reading, optional per-person split, and an **offer comparison** (enter a tariff from the [ERSE simulator](https://www.erse.pt/simuladores/precos-de-energia/) to see the yearly saving).
@@ -53,7 +55,8 @@ Choose how much to share when creating the space: **Household only** (bills, sub
 ## Honest limits
 - The PIN is a screen lock, not encryption of local storage.
 - Photo/PDF/OCR reading is best-effort — always check the preview. The OCR and PDF libraries load from a CDN on first use.
-- Notifications appear while the app is open; real push needs a server.
+- Reminders with the app closed use periodic background sync: Chrome on Android, app installed, notifications allowed; the browser decides how often it runs. Elsewhere they appear while the app is open.
+- IRS figures are a simplified estimate; the Portal das Finanças has the final values.
 - Not tax or legal advice; the VAT report is a summary for your accountant, not a filing.
 - Loan figures assume a fixed rate; use your bank statement as the authority.
 

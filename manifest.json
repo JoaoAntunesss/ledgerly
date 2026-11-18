@@ -1,5 +1,5 @@
 {
-  "name": "Ledgerly — invoices & bills",
+  "name": "Ledgerly — bills, receipts & money",
   "short_name": "Ledgerly",
   "start_url": "./index.html",
   "scope": "./",
@@ -7,7 +7,35 @@
   "background_color": "#f6f7f9",
   "theme_color": "#a65f1e",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ]
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "files": [
+        {
+          "name": "files",
+          "accept": [
+            "image/*",
+            "application/pdf",
+            ".pdf"
+          ]
+        }
+      ]
+    }
+  }
 }

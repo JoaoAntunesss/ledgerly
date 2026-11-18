@@ -19,7 +19,7 @@
     if (!db.offers || typeof db.offers !== 'object' || Array.isArray(db.offers)) db.offers = {};
   }
   var warned = false;
-  function save() { if (window.__afterSave) window.__afterSave(); try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { if (!warned) { warned = true; toast('Could not save — browser storage is blocked or full. Export a backup!'); } } }
+  function save() { if (window.__afterSave) window.__afterSave(); clearTimeout(save.t); save.t = setTimeout(writeDueCache, 400); try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { if (!warned) { warned = true; toast('Could not save — browser storage is blocked or full. Export a backup!'); } } }
   load();
 
   /* ---------- helpers ---------- */
@@ -75,12 +75,12 @@
   function field(label, name, v, type, extra) { return '<div><label>' + label + '</label><input name="' + name + '" type="' + (type || 'text') + '" value="' + esc(v) + '" ' + (extra || '') + '></div>'; }
 
   /* ---------- views ---------- */
-  var routes = { docs: docsPage, dashboard: dashboard, spending: spending, invoices: invoices, invoice: invoiceDoc, edit: invoiceEdit, clients: clients, expenses: expenses, bills: bills, subs: subs, income: incomePage, loans: loansPage, wealth: wealth, reminders: reminders, split: split, vat: vatReport, settings: settings };
+  var routes = { docs: docsPage, month: monthPage, irs: irsPage, warranties: warrantiesPage, dashboard: dashboard, spending: spending, invoices: invoices, invoice: invoiceDoc, edit: invoiceEdit, clients: clients, expenses: expenses, bills: bills, subs: subs, income: incomePage, loans: loansPage, wealth: wealth, reminders: reminders, split: split, vat: vatReport, settings: settings };
   function route() {
     var h = location.hash.replace(/^#\/?/, '').split('/'), name = h[0] || 'docs';
     if (!routes[name]) name = 'docs';
     document.querySelectorAll('#nav a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === (name === 'invoice' || name === 'edit' ? 'invoices' : name)); });
-    routes[name](h[1]); window.scrollTo(0, 0); view.dataset.page = name; document.title = 'Ledgerly'; tabOn(name); decorateEmpty(name); if (window.__fx) window.__fx.after(name);
+    routes[name](h[1], h[2]); window.scrollTo(0, 0); view.dataset.page = name; document.title = 'Ledgerly'; tabOn(name); decorateEmpty(name); if (window.__fx) window.__fx.after(name);
   }
   var EMPTY_ICON = { docs: '📥', bills: '🧾', subs: '🔁', income: '💰', loans: '🏦', wealth: '🎯', split: '🤝', reminders: '⏰', expenses: '💸', invoices: '📄', clients: '👥' };
   var EMPTY_TITLE = { docs: 'All caught up', bills: 'No bills yet', subs: 'No subscriptions yet', income: 'No income yet', loans: 'No loans yet', wealth: 'Nothing here yet', split: 'No shared groups yet', reminders: 'Nothing to remind you about', expenses: 'No expenses yet', invoices: 'No invoices yet', clients: 'No clients yet' };
@@ -206,7 +206,7 @@
     var wd = $('#wdemo'); if (wd) wd.onclick = function () { demo(); save(); route(); };
     view.querySelectorAll('[data-q]').forEach(function (b) { b.onclick = function () { quickAdd(b.dataset.q); }; });
   }
-  function applyMode() { var lb = $('#langbtn'); if (lb) lb.textContent = '🌐 ' + (LOCALE ? 'English' : 'Português'); document.body.dataset.mode = db.settings.mode || 'both'; }
+  function applyMode() { var lb = $('#langbtn'); if (lb) lb.textContent = '🌐 ' + (LOCALE ? 'English' : 'Português'); document.body.dataset.mode = db.settings.mode || (db.invoices.length || db.clients.length ? 'both' : 'home'); }
   function quickAdd(k) {
     var go = function (hash, sel, wait) { if (location.hash !== hash) location.hash = hash; else route(); setTimeout(function () { var e = $(sel); if (e) e.click(); }, wait || 80); };
     if (dlg.open) dlg.close('x');
@@ -963,7 +963,7 @@
       window.showDirectoryPicker({ mode: 'readwrite' }).then(function (h) { dirH = h; return idbPut('__dir', h).catch(function () { }); }).then(function () { return bkWrite(); }).then(function () { toast('Backup folder set — backup written'); settings(); }).catch(function (e) { if (e && e.name !== 'AbortError') toast('Could not use that folder'); });
     };
     var rg = $('#regrant'); if (rg) rg.onclick = function () { bkPerm(dirH, true).then(function () { return bkWrite(); }).then(function () { toast('Auto backup is on'); settings(); }); };
-    $('#notif').onclick = function () { if (!('Notification' in window)) return; Notification.requestPermission().then(function () { notifyDue(); settings(); }); };
+    $('#notif').onclick = function () { if (!('Notification' in window)) return; Notification.requestPermission().then(function () { notifyDue(); armBackground(); settings(); }); };
     $('#lang').onchange = function (e) { lsSet(LANGKEY, e.target.value); location.reload(); };
   }
   function backupBanner() {
@@ -1026,7 +1026,7 @@
     view.innerHTML = '<div class="top"><h1>Warranties & deadlines</h1><div class="row"><button class="btn" id="newd">+ Deadline</button><button class="btn p" id="newi">+ Warranty</button></div></div>' +
       '<div class="card"><h2>Deadlines</h2>' + (D.length ? '<table><tbody>' + D.map(function (o) { var late = o.d < today(); return '<tr><td><b>' + esc(o.x.name) + '</b>' + (o.x.note ? '<div class="mut">' + esc(o.x.note) + '</div>' : '') + '</td><td class="mut">' + (o.x.repeat === 'yearly' ? 'every year' : 'once') + '</td><td>' + fdate(o.d) + (late ? ' <span class="tag overdue">past</span>' : o.d <= addDays(today(), 30) ? ' <span class="tag draft">soon</span>' : '') + '</td><td class="r"><button class="btn s" data-ed="' + o.x.id + '">Edit</button></td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty" style="padding:14px">Nothing yet.</div>') +
       '<div class="row" style="margin-top:12px">' + DL.map(function (d, i) { return '<button class="btn s" data-pd="' + i + '">+ ' + esc(d[0]) + '</button>'; }).join('') + '</div></div>' +
-      '<div class="card" style="margin-top:14px"><h2>Warranties</h2>' + (W.length ? '<table><tbody>' + W.map(function (o) { var x = o.x, st = o.e < today() ? '<span class="tag overdue">expired</span>' : o.e <= addDays(today(), 60) ? '<span class="tag draft">ends soon</span>' : '<span class="tag paid">valid</span>'; return '<tr><td><b>' + esc(x.name) + '</b>' + (x.file ? ' <a href="#" data-f="' + x.id + '">📎</a>' : '') + '<div class="mut">' + esc(x.store || '') + (x.price ? ' · ' + money(x.price) : '') + '</div></td><td>Until ' + fdate(o.e) + '</td><td>' + st + '</td><td class="r"><button class="btn s" data-ei="' + x.id + '">Edit</button></td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty" style="padding:14px">Add appliances and electronics with the purchase date — attach the receipt photo so you have it when something breaks.</div>') + '</div>';
+      '<div class="card" style="margin-top:14px"><h2>Warranties</h2>' + (W.length ? '<table><tbody>' + W.map(function (o) { var x = o.x, st = o.e < today() ? '<span class="tag overdue">expired</span>' : o.e <= addDays(today(), 60) ? '<span class="tag draft">ends soon</span>' : '<span class="tag paid">valid</span>'; return '<tr><td><b>' + esc(x.name) + '</b>' + (x.file || x.docId ? ' <a href="#" data-f="' + (x.file ? x.id : x.docId) + '">📎</a>' : '') + '<div class="mut">' + esc(x.store || '') + (x.price ? ' · ' + money(x.price) : '') + '</div></td><td>Until ' + fdate(o.e) + '</td><td>' + st + '</td><td class="r"><button class="btn s" data-ei="' + x.id + '">Edit</button></td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty" style="padding:14px">Add appliances and electronics with the purchase date — attach the receipt photo so you have it when something breaks.</div>') + '</div>';
     $('#newd').onclick = function () { dlForm(); }; $('#newi').onclick = function () { itemForm(); };
     view.onclick = function (e) {
       var f = e.target.closest('[data-f]'); if (f) { e.preventDefault(); return openAttach(f.dataset.f); }
@@ -1045,9 +1045,9 @@
   function itemForm(x) {
     x = x || { id: uid(), name: '', store: '', bought: today(), months: 24, price: '' }; var isNew = !db.items.some(function (y) { return y.id === x.id; });
     ask('<h2>' + (isNew ? 'Add warranty' : 'Edit warranty') + '</h2><div class="f">' + field('Item *', 'name', x.name, 'text', 'required') + field('Store', 'store', x.store) + field('Purchase date', 'bought', x.bought, 'date') + field('Warranty (months)', 'months', x.months, 'number', 'min="1"') + field('Price', 'price', x.price, 'text', 'inputmode="decimal"') + attachField(x) + '</div>' + (isNew ? '' : '<p><button type="button" class="btn s d" id="rm">Delete</button></p>'), function (d) {
-      if (!val(d, 'name')) { toast('Name is required'); return; } x.name = val(d, 'name'); x.store = val(d, 'store'); x.bought = val(d, 'bought') || today(); x.months = parseInt(val(d, 'months'), 10) || 24; x.price = num(val(d, 'price')); saveAttach(x, d); if (isNew) db.items.push(x); save(); reminders(); toast('Saved');
+      if (!val(d, 'name')) { toast('Name is required'); return; } x.name = val(d, 'name'); x.store = val(d, 'store'); x.bought = val(d, 'bought') || today(); x.months = parseInt(val(d, 'months'), 10) || 24; x.price = num(val(d, 'price')); saveAttach(x, d); if (isNew) db.items.push(x); save(); route(); toast('Saved');
     });
-    var rm = dlg.querySelector('#rm'); if (rm) rm.onclick = function () { db.items = db.items.filter(function (y) { return y.id !== x.id; }); idbDel(x.id); save(); dlg.close('x'); reminders(); };
+    var rm = dlg.querySelector('#rm'); if (rm) rm.onclick = function () { db.items = db.items.filter(function (y) { return y.id !== x.id; }); idbDel(x.id); save(); dlg.close('x'); route(); };
   }
 
   /* ---------- split: shared expenses ---------- */
@@ -1362,29 +1362,39 @@
     return loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js').then(function () { return Tesseract.recognize(file, 'por+eng'); }).then(function (r) { return r.data.text; });
   }
 
-  /* ---------- My bills: any invoice or receipt, read by AI, waiting until you mark it paid ----------
-     A photo or PDF goes in; the Groq AI reads the fields that matter for that kind of document (kWh and CPE on an
-     electricity bill, policy number on insurance, litres on fuel, the Multibanco reference on anything to pay…).
-     Home utilities are stored as bills (so the Utilities charts keep working); everything else as an expense.
-     Both carry paid / due / reference, and the "My bills" page lists what is still to pay. */
+  /* ---------- My bills: any invoice or receipt, read locally (QR code) and by AI, waiting until you mark it paid ----------
+     1. The Portuguese tax QR code (Portaria 195/2020) is read on the device: issuer NIF, buyer NIF, document type, date, nº,
+        ATCUD, VAT and total — exact and private. 2. The Groq AI reads what the QR does not have (kind of bill, kWh, policy nº,
+        Multibanco reference, due date, products with warranty). 3. Rules remembered per company fill in the rest.
+     Home utilities are stored as bills (Utilities charts keep working); everything else as an expense. */
   var DK = {
-    electricity: { l: 'Electricity', i: '💡', bill: 'electricity' }, water: { l: 'Water', i: '💧', bill: 'water' }, gas: { l: 'Gas', i: '🔥', bill: 'gas' },
-    internet: { l: 'Internet / TV', i: '📡', bill: 'internet' }, mobile: { l: 'Mobile', i: '📱', bill: 'mobile' }, insurance: { l: 'Insurance', i: '🛡️', bill: 'insurance' },
-    rent: { l: 'Rent / condo', i: '🏠', bill: 'rent' }, tax: { l: 'Taxes', i: '🏛️', cat: 'Taxes & fees' }, health: { l: 'Health', i: '🩺', cat: 'Health' },
-    education: { l: 'Education', i: '🎓', cat: 'Education' }, groceries: { l: 'Groceries', i: '🛒', cat: 'Groceries' }, food: { l: 'Restaurants', i: '🍽️', cat: 'Food & drinks' },
-    fuel: { l: 'Fuel', i: '⛽', cat: 'Fuel' }, shopping: { l: 'Shopping', i: '🛍️', cat: 'Shopping' }, car: { l: 'Car', i: '🚗', cat: 'Car' },
-    services: { l: 'Services', i: '🧰', cat: 'Services' }, travel: { l: 'Transport & travel', i: '🚆', cat: 'Travel' }, other: { l: 'Other', i: '📄', cat: 'Other' }
+    electricity: { l: 'Electricity', i: '💡', bill: 'electricity', irs: 'geral' }, water: { l: 'Water', i: '💧', bill: 'water', irs: 'geral' }, gas: { l: 'Gas', i: '🔥', bill: 'gas', irs: 'geral' },
+    internet: { l: 'Internet / TV', i: '📡', bill: 'internet', irs: 'geral' }, mobile: { l: 'Mobile', i: '📱', bill: 'mobile', irs: 'geral' }, insurance: { l: 'Insurance', i: '🛡️', bill: 'insurance', irs: 'geral' },
+    rent: { l: 'Rent / condo', i: '🏠', bill: 'rent', irs: 'habitacao' }, tax: { l: 'Taxes', i: '🏛️', cat: 'Taxes & fees', irs: 'nao' }, health: { l: 'Health', i: '🩺', cat: 'Health', irs: 'saude' },
+    education: { l: 'Education', i: '🎓', cat: 'Education', irs: 'educacao' }, groceries: { l: 'Groceries', i: '🛒', cat: 'Groceries', irs: 'geral' }, food: { l: 'Restaurants', i: '🍽️', cat: 'Food & drinks', irs: 'iva_rest' },
+    fuel: { l: 'Fuel', i: '⛽', cat: 'Fuel', irs: 'geral' }, shopping: { l: 'Shopping', i: '🛍️', cat: 'Shopping', irs: 'geral' }, car: { l: 'Car', i: '🚗', cat: 'Car', irs: 'iva_auto' },
+    services: { l: 'Services', i: '🧰', cat: 'Services', irs: 'geral' }, travel: { l: 'Transport & travel', i: '🚆', cat: 'Travel', irs: 'geral' }, other: { l: 'Other', i: '📄', cat: 'Other', irs: 'geral' }
   };
+  /* IRS sectors (e-Fatura). Estimates are simplified on purpose: the Portal das Finanças has the final numbers. */
+  var IRS = {
+    geral: { l: 'General family expenses', r: .35, cap: 250, per: 'person' }, saude: { l: 'Health', r: .15, cap: 1000 }, educacao: { l: 'Education', r: .30, cap: 800 },
+    habitacao: { l: 'Housing (rent)', r: .15, cap: 0 }, lares: { l: 'Care homes', r: .25, cap: 403.75 },
+    iva_rest: { l: 'VAT: restaurants & hotels', iva: 1 }, iva_cab: { l: 'VAT: hairdressers & beauty', iva: 1 }, iva_auto: { l: 'VAT: car & motorbike repairs', iva: 1 },
+    iva_vet: { l: 'VAT: vets', iva: 1 }, iva_passes: { l: 'VAT: public transport passes', iva: 1 }, iva_gin: { l: 'VAT: gyms', iva: 1 },
+    cultura: { l: 'Culture (books, shows)', est: 0 }, nao: { l: 'Does not count for IRS', est: 0 }
+  };
+  function rentCap(y) { return +y >= 2026 ? 900 : 700; }
   var AI_TYPES = { luz: 'electricity', agua: 'water', gas: 'gas', internet: 'internet', telemovel: 'mobile', seguro: 'insurance', renda: 'rent', condominio: 'rent', imposto: 'tax', saude: 'health', educacao: 'education', supermercado: 'groceries', restaurante: 'food', combustivel: 'fuel', compras: 'shopping', carro: 'car', servicos: 'services', transportes: 'travel', outro: 'other' };
   var BILL2K = { electricity: 'electricity', water: 'water', gas: 'gas', internet: 'internet', mobile: 'mobile', insurance: 'insurance', rent: 'rent', other: 'other' };
   function catKind(cat) { for (var k in DK) if (DK[k].cat === cat) return k; return 'other'; }
   function docKind(o) { return o.src === 'bill' ? (o.x.kind || BILL2K[o.x.type] || 'other') : (o.x.kind || catKind(o.x.cat)); }
-  function allDocs() {
-    return db.bills.map(function (x) { return { src: 'bill', x: x }; }).concat(db.expenses.map(function (x) { return { src: 'exp', x: x }; }));
-  }
+  function allDocs() { return db.bills.map(function (x) { return { src: 'bill', x: x }; }).concat(db.expenses.map(function (x) { return { src: 'exp', x: x }; })); }
   function isPaid(x) { return x.paid !== false; }
+  function paidSoFar(x) { return (x.payments || []).reduce(function (a, p) { return a + num(p.a); }, 0); }
+  function leftToPay(x) { return Math.max(0, round2(num(x.amount) - paidSoFar(x))); }
   function docName(o) { return o.src === 'bill' ? (o.x.provider || BT[o.x.type].l) : (o.x.vendor || o.x.note || 'Expense'); }
   function docDate(o) { return o.x.date || ''; }
+  function docIrs(o) { return o.x.irs || (DK[docKind(o)] || DK.other).irs; }
   function autoDebits() {            // direct debits pay themselves on the due date
     var n = 0; allDocs().forEach(function (o) { var x = o.x; if (x.paid === false && x.method === 'dd' && x.due && x.due <= today()) { x.paid = true; x.paidOn = x.due; n++; } });
     if (n) save(); return n;
@@ -1397,48 +1407,135 @@
     if (x.method === 'dd') return '<span class="tag sent"><span>direct debit</span> ' + fdate(x.due) + '</span>';
     return d < 0 ? '<span class="tag overdue"><span>overdue by</span> ' + (-d) + ' <span>' + (d === -1 ? 'day' : 'days') + '</span></span>' : d === 0 ? '<span class="tag overdue">due today</span>' : '<span class="tag ' + (d <= 7 ? 'draft' : 'sent') + '">' + d + ' <span>' + (d === 1 ? 'day left' : 'days left') + '</span></span>';
   }
-  var docsTab = 'pay';
-  function docsPage() {
+  function findDoc(id) { return allDocs().filter(function (o) { return o.x.id === id; })[0]; }
+  function copyTxt(s) { try { navigator.clipboard.writeText(s.replace(/\s/g, '')); toast('Copied ✓'); } catch (e) { toast(s); } }
+  function markPaid(id) { var o = findDoc(id); if (!o) return false; o.x.paid = true; o.x.paidOn = today(); save(); writeDueCache(); return true; }
+
+  /* the same bill usually arrives every month: tell when one is late */
+  function missingBills() {
+    var by = {}, out = [];
+    allDocs().forEach(function (o) { if (!o.x.doc && o.src !== 'bill') return; var k = docName(o).toLowerCase() + '|' + docKind(o); (by[k] = by[k] || []).push(o); });
+    Object.keys(by).forEach(function (k) {
+      var l = by[k].sort(function (a, b) { return docDate(a).localeCompare(docDate(b)); }); if (l.length < 2) return;
+      var gaps = []; for (var i = 1; i < l.length; i++) gaps.push(daysTo(docDate(l[i])) - daysTo(docDate(l[i - 1])));
+      var avg = gaps.slice(-3).reduce(function (a, g) { return a + g; }, 0) / Math.min(3, gaps.length); if (avg < 20 || avg > 40) return;
+      var last = l[l.length - 1], exp = addDays(docDate(last), Math.round(avg));
+      if (daysTo(exp) < -7) out.push({ n: docName(last), k: docKind(last), exp: exp });
+    });
+    return out;
+  }
+  function eFaturaBanner() {
+    var m = +today().slice(5, 7); if (m > 2) return '';
+    var y = +today().slice(0, 4) - 1, need = allDocs().filter(function (o) { var s = docIrs(o); return (docDate(o)).slice(0, 4) == y && s !== 'nao' && s !== 'geral'; }).length;
+    return '<div class="card notice"><b>🧾 e-Fatura: <span>validate last year\'s invoices</span></b><div class="mut"><span>Until the end of February (check the exact date on the Portal), confirm in e-Fatura that health, education, rent and VAT invoices are in the right sector.</span>' + (need ? ' ' + need + ' <span>invoices of that kind here.</span>' : '') + ' <a href="#/irs">IRS →</a></div></div>';
+  }
+
+  var docsTab = 'pay', docsFilter = { k: '', m: '', q: '' };
+  function docsPage(arg, id) {
+    if (arg === 'pay' && id) { if (markPaid(id)) toast('Marked as paid ✓'); location.replace('#/'); return; }
+    if (arg === 'shared') { takeShared(); location.replace('#/'); return; }
     autoDebits();
     var L = allDocs(), unpaid = L.filter(function (o) { return !isPaid(o.x); }).sort(function (a, b) { return (a.x.due || '9999').localeCompare(b.x.due || '9999'); });
-    var mk = today().slice(0, 7), month = L.filter(function (o) { return (docDate(o)).slice(0, 7) === mk || (o.x.paidOn || '').slice(0, 7) === mk; });
+    var mk = today().slice(0, 7), month = L.filter(function (o) { return docDate(o).slice(0, 7) === mk; });
     var late = unpaid.filter(function (o) { return o.x.due && o.x.due < today() && o.x.method !== 'dd'; });
-    var sumU = unpaid.reduce(function (a, o) { return a + num(o.x.amount); }, 0), sumM = month.reduce(function (a, o) { return a + num(o.x.amount); }, 0);
-    var recent = L.filter(function (o) { return o.x.doc; }).sort(function (a, b) { return (b.x.added || docDate(b)).localeCompare(a.x.added || docDate(a)); });
-    var list = docsTab === 'pay' ? unpaid : docsTab === 'month' ? month.sort(function (a, b) { return docDate(b).localeCompare(docDate(a)); }) : recent;
+    var sumU = unpaid.reduce(function (a, o) { return a + leftToPay(o.x); }, 0), sumM = month.reduce(function (a, o) { return a + num(o.x.amount); }, 0);
+    var list;
+    if (docsTab === 'pay') list = unpaid;
+    else {
+      var q = docsFilter.q.toLowerCase();
+      list = L.filter(function (o) { return (!docsFilter.k || docKind(o) === docsFilter.k) && (!docsFilter.m || docDate(o).slice(0, 7) === docsFilter.m) && (!q || (docName(o) + ' ' + (o.x.note || '') + ' ' + ((o.x.doc || {}).number || '')).toLowerCase().indexOf(q) > -1); })
+        .sort(function (a, b) { return docDate(b).localeCompare(docDate(a)); }).slice(0, 200);
+    }
+    var months = {}; L.forEach(function (o) { var m = docDate(o).slice(0, 7); if (m) months[m] = 1; });
+    var miss = missingBills();
     view.innerHTML = '<div class="top"><div><h1>My bills</h1><div class="mut">Every invoice and receipt in one place</div></div></div>' +
-      '<div class="docadd card"><div><b>Add an invoice or receipt</b><div class="mut">Photo or PDF. The AI reads it and fills everything in.</div></div><div class="row">' +
+      '<div class="docadd card"><div><b>Add an invoice or receipt</b><div class="mut">Photo or PDF. The QR code and the AI fill everything in.</div></div><div class="row">' +
       '<label class="btn p" style="margin:0">📷 Take photo<input type="file" id="dcam" accept="image/*" capture="environment" hidden></label>' +
       '<label class="btn" style="margin:0">📎 Choose files<input type="file" id="dfile" accept="image/*,application/pdf" multiple hidden></label></div></div>' +
+      eFaturaBanner() +
+      miss.map(function (m) { return '<div class="card notice warn">' + (DK[m.k] || DK.other).i + ' <b><span>No new invoice yet from</span> ' + esc(m.n) + '</b> <span class="mut"><span>it usually arrives around</span> ' + fdate(m.exp) + '.</span></div>'; }).join('') +
       '<div class="dkpi">' + kpi('To pay', money(sumU), sumU ? '' : 'ok') + kpi('Overdue', String(late.length), late.length ? 'bad' : 'ok') + kpi('This month', money(sumM)) + '</div>' +
-      '<div class="row" style="margin-bottom:12px">' + [['pay', '<span>To pay</span> (' + unpaid.length + ')'], ['month', 'This month'], ['all', 'All read by AI']].map(function (t) { return '<button class="btn s ' + (docsTab === t[0] ? 'p' : '') + '" data-dt="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
-      (list.length ? '<div class="doclist">' + list.map(docCard).join('') + '</div>' : '<div class="card empty">' + (docsTab === 'pay' ? 'Nothing to pay. 🎉 Take a photo of the next invoice that arrives and it waits here until you pay it.' : 'Nothing here yet. Add a photo or PDF of any invoice or receipt: electricity, supermarket, insurance, pharmacy, taxes…') + '</div>');
+      '<div class="row" style="margin-bottom:12px">' + [['pay', '<span>To pay</span> (' + unpaid.length + ')'], ['all', 'All']].map(function (t) { return '<button class="btn s ' + (docsTab === t[0] ? 'p' : '') + '" data-dt="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
+      '<a class="btn s" href="#/month">📅 Calendar</a><a class="btn s" href="#/irs">🏛️ IRS</a><a class="btn s" href="#/warranties">🛡️ Warranties</a></div>' +
+      (docsTab === 'all' ? '<div class="row filt"><select id="fk"><option value="">All types</option>' + Object.keys(DK).map(function (k) { return '<option value="' + k + '" ' + (docsFilter.k === k ? 'selected' : '') + '>' + DK[k].i + ' ' + DK[k].l + '</option>'; }).join('') + '</select>' +
+        '<select id="fm"><option value="">All months</option>' + Object.keys(months).sort().reverse().map(function (m) { return '<option value="' + m + '" ' + (docsFilter.m === m ? 'selected' : '') + '>' + monthName(m) + '</option>'; }).join('') + '</select>' +
+        '<input id="fq" placeholder="Search…" value="' + esc(docsFilter.q) + '"></div>' : '') +
+      (list.length ? '<div class="doclist">' + list.map(docCard).join('') + '</div>' : '<div class="card empty">' + (docsTab === 'pay' ? 'Nothing to pay. 🎉 Take a photo of the next invoice that arrives and it waits here until you pay it.' : 'Nothing found.') + '</div>');
     $('#dcam').onchange = function (e) { readDocs(e.target.files); e.target.value = ''; };
     $('#dfile').onchange = function (e) { readDocs(e.target.files); e.target.value = ''; };
+    var fk = $('#fk'); if (fk) { fk.onchange = function () { docsFilter.k = fk.value; docsPage(); }; $('#fm').onchange = function () { docsFilter.m = $('#fm').value; docsPage(); }; var fq = $('#fq'); fq.onchange = function () { docsFilter.q = fq.value.trim(); docsPage(); }; }
     view.onclick = function (e) {
       var t = e.target.closest('[data-dt]'); if (t) { docsTab = t.dataset.dt; docsPage(); return; }
       var c = e.target.closest('[data-cp]'); if (c) { e.preventDefault(); copyTxt(c.dataset.cp); return; }
       var f = e.target.closest('[data-f]'); if (f) { e.preventDefault(); openAttach(f.dataset.f); return; }
-      var p = e.target.closest('[data-pay]'); if (p) { var o = findDoc(p.dataset.pay); if (o) { o.x.paid = true; o.x.paidOn = today(); save(); docsPage(); toast('Marked as paid ✓'); } return; }
-      var u = e.target.closest('[data-unpay]'); if (u) { var o2 = findDoc(u.dataset.unpay); if (o2) { o2.x.paid = false; delete o2.x.paidOn; save(); docsPage(); } return; }
+      var p = e.target.closest('[data-pay]'); if (p) { if (markPaid(p.dataset.pay)) { docsPage(); toast('Marked as paid ✓'); } return; }
+      var pp = e.target.closest('[data-part]'); if (pp) { partForm(pp.dataset.part); return; }
+      var u = e.target.closest('[data-unpay]'); if (u) { var o2 = findDoc(u.dataset.unpay); if (o2) { o2.x.paid = false; delete o2.x.paidOn; o2.x.payments = []; save(); writeDueCache(); docsPage(); } return; }
       var ed = e.target.closest('[data-ed]'); if (ed) { var o3 = findDoc(ed.dataset.ed); if (o3) docReview(null, o3); }
     };
   }
-  function findDoc(id) { return allDocs().filter(function (o) { return o.x.id === id; })[0]; }
-  function copyTxt(s) { try { navigator.clipboard.writeText(s.replace(/\s/g, '')); toast('Copied ✓'); } catch (e) { toast(s); } }
+  function partForm(id) {
+    var o = findDoc(id); if (!o) return; var x = o.x;
+    ask('<h2>Partial payment</h2><p class="mut">' + esc(docName(o)) + ' · <span>total</span> ' + money(num(x.amount)) + ' · <span>still to pay</span> ' + money(leftToPay(x)) + '</p><div class="f">' + field('Amount paid now', 'a', '', 'text', 'inputmode="decimal" required autofocus') + field('Date', 'd', today(), 'date') + '</div>', function (d) {
+      var a = num(val(d, 'a')); if (!(a > 0)) return;
+      x.payments = x.payments || []; x.payments.push({ d: val(d, 'd') || today(), a: a });
+      if (leftToPay(x) <= 0.005) { x.paid = true; x.paidOn = val(d, 'd') || today(); toast('Fully paid ✓'); } else toast('Payment saved');
+      save(); writeDueCache(); docsPage();
+    }, 'Save payment');
+  }
   function docCard(o) {
-    var x = o.x, k = DK[docKind(o)] || DK.other, D = x.doc || {};
-    var ref = D.ent && D.ref ? '<div class="mbref"><span>MB</span> <i>Entity</i> <b data-cp="' + esc(D.ent) + '">' + esc(D.ent) + '</b> · <i>Ref.</i> <b data-cp="' + esc(D.ref) + '">' + esc(D.ref) + '</b> <small class="mut">tap to copy</small></div>' : D.iban && !isPaid(x) ? '<div class="mbref">IBAN <b data-cp="' + esc(D.iban) + '">' + esc(D.iban) + '</b></div>' : '';
+    var x = o.x, k = DK[docKind(o)] || DK.other, D = x.doc || {}, part = paidSoFar(x);
+    var ref = !isPaid(x) && D.ent && D.ref ? '<div class="mbref"><span>MB</span> <i>Entity</i> <b data-cp="' + esc(D.ent) + '">' + esc(D.ent) + '</b> · <i>Ref.</i> <b data-cp="' + esc(D.ref) + '">' + esc(D.ref) + '</b> <small class="mut">tap to copy</small></div>' : D.iban && !isPaid(x) ? '<div class="mbref">IBAN <b data-cp="' + esc(D.iban) + '">' + esc(D.iban) + '</b></div>' : '';
     var extra = (D.fields || []).slice(0, 4).map(function (f) { return '<span>' + esc(f.n) + ': <b>' + esc(f.v) + '</b></span>'; }).join('');
+    var irs = docIrs(o);
     return '<div class="card doc ' + (isPaid(x) ? 'is-paid' : x.due && x.due < today() && x.method !== 'dd' ? 'is-late' : '') + '"><div class="dico">' + k.i + '</div><div class="dmain">' +
       '<div class="dtop"><b>' + esc(docName(o)) + '</b><b class="damt">' + money(num(x.amount)) + '</b></div>' +
-      '<div class="mut"><span>' + k.l + '</span>' + (D.number ? ' · Nº ' + esc(D.number) : '') + ' · ' + fdate(docDate(o)) + (x.due && !isPaid(x) ? ' · <span>pay by</span> ' + fdate(x.due) : '') + ' ' + dueTag(x) + '</div>' +
+      '<div class="mut"><span>' + k.l + '</span>' + (D.number ? ' · Nº ' + esc(D.number) : '') + ' · ' + fdate(docDate(o)) + (x.due && !isPaid(x) ? ' · <span>pay by</span> ' + fdate(x.due) : '') + ' ' + dueTag(x) +
+      (D.qr ? ' <span class="tag paid" title="Checked with the invoice QR code">QR ✓</span>' : '') + (irs !== 'nao' && irs !== 'geral' ? ' <span class="tag">IRS: <span>' + IRS[irs].l + '</span></span>' : '') + (D.noNif ? ' <span class="tag draft">without your NIF</span>' : '') + '</div>' +
+      (part && !isPaid(x) ? '<div class="mut" style="font-size:13px"><span>Paid so far</span> ' + money(part) + ' · <span>still to pay</span> <b>' + money(leftToPay(x)) + '</b></div>' : '') +
       (extra ? '<div class="dext">' + extra + '</div>' : '') + ref +
-      '<div class="row dact">' + (isPaid(x) ? '<button class="btn s" data-unpay="' + x.id + '">Not paid after all</button>' : '<button class="btn s p" data-pay="' + x.id + '">✓ I paid it</button>') +
+      '<div class="row dact">' + (isPaid(x) ? '<button class="btn s" data-unpay="' + x.id + '">Not paid after all</button>' : '<button class="btn s p" data-pay="' + x.id + '">✓ I paid it</button><button class="btn s" data-part="' + x.id + '">Paid part</button>') +
       (x.file ? '<a href="#" class="btn s" data-f="' + x.id + '">📎 Open</a>' : '') + '<button class="btn s" data-ed="' + x.id + '">Edit</button></div></div></div>';
   }
 
-  /* --- reading --- */
+  /* --- the tax QR code (read on the device) --- */
+  function parseATQR(s) {
+    if (!/^A:\d{9}\*B:/.test(s || '')) return null;
+    var o = {}; s.split('*').forEach(function (p) { var i = p.indexOf(':'); if (i > 0) o[p.slice(0, i)] = p.slice(i + 1); });
+    var d = o.F || '', iso = d.length === 8 ? d.slice(0, 4) + '-' + d.slice(4, 6) + '-' + d.slice(6, 8) : '';
+    return { nif: o.A, buyer: o.B, type: o.D, status: o.E, date: iso, number: o.G, atcud: o.H, vat: +o.N || 0, total: +o.O || 0 };
+  }
+  function qrFromCanvas(c) {
+    if ('BarcodeDetector' in window) {
+      return new BarcodeDetector({ formats: ['qr_code'] }).detect(c).then(function (r) { for (var i = 0; i < r.length; i++) { var p = parseATQR(r[i].rawValue); if (p) return p; } return jsqrScan(c); }).catch(function () { return jsqrScan(c); });
+    }
+    return jsqrScan(c);
+  }
+  function jsqrScan(c) {
+    return loadScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js').then(function () {
+      var x = c.getContext('2d'), tries = [[0, 0, c.width, c.height]], half = [[0, c.height / 2, c.width, c.height / 2], [0, 0, c.width, c.height / 2]];
+      tries = tries.concat(half);
+      for (var i = 0; i < tries.length; i++) { var t = tries[i].map(Math.round), im = x.getImageData(t[0], t[1], t[2], t[3]), r = jsQR(im.data, im.width, im.height); if (r) { var p = parseATQR(r.data); if (p) return p; } }
+      return null;
+    }).catch(function () { return null; });
+  }
+  function imageCanvas(file, max) {
+    return new Promise(function (ok, no) {
+      var img = new Image(), u = URL.createObjectURL(file);
+      img.onload = function () { var s = Math.min(1, (max || 1600) / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c); };
+      img.onerror = function () { URL.revokeObjectURL(u); no(new Error('image')); }; img.src = u;
+    });
+  }
+  function pdfCanvases(file) {          // first and last page: the QR is on one of them
+    var V = '3.11.174', B = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + V + '/';
+    return loadScript(B + 'pdf.min.js').then(function () { pdfjsLib.GlobalWorkerOptions.workerSrc = B + 'pdf.worker.min.js'; return file.arrayBuffer(); })
+      .then(function (buf) { return pdfjsLib.getDocument({ data: buf }).promise; }).then(function (pdf) {
+        var pages = [1]; if (pdf.numPages > 1) pages.push(pdf.numPages);
+        return Promise.all(pages.map(function (n) { return pdf.getPage(n).then(function (p) { var vp = p.getViewport({ scale: 2.2 }), c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; return p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () { return c; }); }); }));
+      });
+  }
+
+  /* --- the AI --- */
   var GROQ_MODELS_V = ['meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct', 'qwen/qwen3.8-27b', 'qwen/qwen3.6-27b'];
   var GROQ_MODELS_T = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'meta-llama/llama-4-scout-17b-16e-instruct'];
   function groqKey() { var k = lsGet('ledgerly.groq') || window.LEDGERLY_GROQ_KEY || ''; return /^__/.test(k) ? '' : k; }
@@ -1448,61 +1545,72 @@
     return fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: 'Bearer ' + groqKey() } }).then(function (r) { return r.json(); }).then(function (j) { groqHave = (j.data || []).map(function (m) { return m.id; }); return groqHave; }).catch(function () { return []; });
   }
   function pickModel(list, have) { return list.filter(function (m) { return have.indexOf(m) > -1; })[0] || list[0]; }
-  function groqAsk(content, vision) {
+  function groqCall(content, vision, json) {
     return groqModels().then(function (have) {
       return fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + groqKey() },
         body: JSON.stringify({ model: pickModel(vision ? GROQ_MODELS_V : GROQ_MODELS_T, have), temperature: 0.1, messages: [{ role: 'user', content: content }] })
       });
     }).then(function (r) { if (!r.ok) throw new Error('groq ' + r.status); return r.json(); }).then(function (j) {
-      var t = String(((j.choices || [])[0] || {}).message ? j.choices[0].message.content : '').replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```json|```/g, '');
-      var a = t.indexOf('{'), b = t.lastIndexOf('}'); return JSON.parse(a >= 0 && b > a ? t.slice(a, b + 1) : t);
+      var t = String(((j.choices || [])[0] || {}).message ? j.choices[0].message.content : '').replace(/<think>[\s\S]*?<\/think>/g, '');
+      if (!json) return t.trim();
+      t = t.replace(/```json|```/g, ''); var a = t.indexOf('{'), b = t.lastIndexOf('}'); return JSON.parse(a >= 0 && b > a ? t.slice(a, b + 1) : t);
     });
   }
   var DOC_PROMPT = 'És um assistente de contabilidade doméstica em Portugal. Lê este documento (fatura, fatura-recibo, recibo, talão, nota de cobrança, aviso de pagamento) e extrai os dados importantes PARA ESTE TIPO de documento.\n' +
-    'Tipos: luz, agua, gas, internet (inclui TV/fibra), telemovel, seguro, renda, condominio, imposto (IMI, IUC, IRS, Segurança Social, coimas), saude (farmácia, clínica, hospital), educacao, supermercado, restaurante, combustivel, compras, carro (oficina, portagens, estacionamento, inspeção), servicos, transportes, outro.\n' +
+    'Tipos: luz, agua, gas, internet (inclui TV/fibra), telemovel, seguro, renda, condominio, imposto (IMI, IUC, IRS, Segurança Social, coimas), saude (farmácia, clínica, hospital, ótica), educacao (escola, propinas, explicações, creche, livros escolares), supermercado, restaurante, combustivel, compras, carro (oficina, portagens, estacionamento, inspeção), servicos, transportes, outro.\n' +
     'Campos específicos a pôr em "campos" (só os que aparecerem, no máximo 6, nome curto em português): luz: consumo kWh, potência contratada (kVA), CPE, período; agua: consumo m³, nº de cliente, contador, período; gas: consumo, CUI, período; internet/telemovel: nº de cliente, nº de telefone ou serviço, período; seguro: apólice, ramo, objeto seguro (matrícula, morada), período coberto; renda/condominio: mês, fração ou morada; imposto: imposto, ano, nº do documento/nota de cobrança; saude: utente, comparticipação; supermercado/restaurante/compras: nº de artigos, forma de pagamento; combustivel: combustível, litros, preço por litro; carro: matrícula, serviço.\n' +
+    'Setor do IRS (e-Fatura): "saude", "educacao", "habitacao" (só rendas de casa), "lares", "iva_rest" (restauração e alojamento), "iva_cab" (cabeleireiros e institutos de beleza), "iva_auto" (reparação de automóveis e motos), "iva_vet" (veterinários), "iva_passes" (passes de transportes), "iva_gin" (ginásios), "cultura" (livros, espetáculos), "geral" (despesas gerais familiares: tudo o resto com NIF), "nao" (impostos, coimas, multas).\n' +
+    'Garantia: se forem compras de bens duradouros (eletrodomésticos, eletrónica, telemóveis, computadores, móveis, ferramentas), lista em "garantia" cada artigo com nome curto e preço.\n' +
     'Estado do pagamento: "pago" se for fatura-recibo, recibo, talão de compra ou disser pago/liquidado; "debito_direto" se disser débito direto/débito em conta/cobrança automática; senão "por_pagar".\n' +
     'Datas em AAAA-MM-DD. Valores em número com ponto decimal. Não inventes: o que não estiver no documento fica "" ou 0.\n' +
-    'Responde APENAS com JSON: {"tipo":"","emissor":"","nif_emissor":"","numero":"","data":"","data_limite":"","total":0,"iva":0,"estado":"por_pagar|pago|debito_direto","mb_entidade":"","mb_referencia":"","iban":"","consumo":0,"campos":[{"nome":"","valor":""}],"resumo":"uma frase curta"}';
-  function shrinkImage(file, max) {
-    return new Promise(function (ok, no) {
-      var img = new Image(), u = URL.createObjectURL(file);
-      img.onload = function () { var s = Math.min(1, (max || 1600) / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', .85)); };
-      img.onerror = function () { URL.revokeObjectURL(u); no(new Error('image')); }; img.src = u;
-    });
-  }
-  function pdfFirstPage(file) {
-    var V = '3.11.174', B = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + V + '/';
-    return loadScript(B + 'pdf.min.js').then(function () { pdfjsLib.GlobalWorkerOptions.workerSrc = B + 'pdf.worker.min.js'; return file.arrayBuffer(); })
-      .then(function (buf) { return pdfjsLib.getDocument({ data: buf }).promise; }).then(function (pdf) { return pdf.getPage(1); })
-      .then(function (p) { var vp = p.getViewport({ scale: 2 }), c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; return p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () { return c.toDataURL('image/jpeg', .85); }); });
-  }
-  function aiRead(file) {
+    'Responde APENAS com JSON: {"tipo":"","emissor":"","nif_emissor":"","numero":"","data":"","data_limite":"","total":0,"iva":0,"estado":"por_pagar|pago|debito_direto","mb_entidade":"","mb_referencia":"","iban":"","consumo":0,"setor_irs":"","campos":[{"nome":"","valor":""}],"garantia":[{"artigo":"","preco":0}],"resumo":"uma frase curta"}';
+  function aiRead(file, canvases) {
+    var img = function (c) { return [{ type: 'text', text: DOC_PROMPT }, { type: 'image_url', image_url: { url: c.toDataURL('image/jpeg', .85) } }]; };
     if (file.type === 'application/pdf') {
       return readPdf(file).then(function (text) {
-        if (text && text.replace(/\s/g, '').length > 120) return groqAsk(DOC_PROMPT + '\n\nTexto do PDF:\n' + text.slice(0, 14000), false);
-        return pdfFirstPage(file).then(function (u) { return groqAsk([{ type: 'text', text: DOC_PROMPT }, { type: 'image_url', image_url: { url: u } }], true); });
+        if (text && text.replace(/\s/g, '').length > 120) return groqCall(DOC_PROMPT + '\n\nTexto do PDF:\n' + text.slice(0, 14000), false, true);
+        return groqCall(img(canvases[0]), true, true);
       });
     }
-    return shrinkImage(file, 1600).then(function (u) { return groqAsk([{ type: 'text', text: DOC_PROMPT }, { type: 'image_url', image_url: { url: u } }], true); });
+    var c = canvases[0], s = Math.min(1, 1600 / Math.max(c.width, c.height));
+    if (s < 1) { var d = document.createElement('canvas'); d.width = c.width * s; d.height = c.height * s; d.getContext('2d').drawImage(c, 0, 0, d.width, d.height); c = d; }
+    return groqCall(img(c), true, true);
   }
   function isoOk(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : ''; }
   function fromAI(r) {
-    r = r || {}; var k = AI_TYPES[String(r.tipo || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')] || 'other';
-    var est = String(r.estado || '');
+    r = r || {}; var k = AI_TYPES[String(r.tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')] || 'other';
+    var est = String(r.estado || ''), irs = String(r.setor_irs || '');
     return {
       kind: k, emitter: String(r.emissor || '').trim(), nif: String(r.nif_emissor || '').replace(/\D/g, ''), number: String(r.numero || '').trim(),
-      date: isoOk(r.data) || today(), due: isoOk(r.data_limite), amount: +r.total || '', vat: +r.iva || 0, usage: +r.consumo || '',
+      date: isoOk(r.data) || today(), due: isoOk(r.data_limite), amount: +r.total || '', vatAmt: +r.iva || 0, usage: +r.consumo || '', irs: IRS[irs] ? irs : '',
       status: est === 'pago' ? 'paid' : est === 'debito_direto' ? 'dd' : 'topay', ent: String(r.mb_entidade || '').replace(/\D/g, ''), ref: String(r.mb_referencia || '').replace(/[^\d ]/g, '').trim(), iban: String(r.iban || '').replace(/\s+/g, ' ').trim(),
       fields: (Array.isArray(r.campos) ? r.campos : []).filter(function (f) { return f && f.nome && f.valor; }).slice(0, 6).map(function (f) { return { n: String(f.nome).slice(0, 30), v: String(f.valor).slice(0, 60) }; }),
+      warranty: (Array.isArray(r.garantia) ? r.garantia : []).filter(function (g) { return g && g.artigo; }).slice(0, 5).map(function (g) { return { n: String(g.artigo).slice(0, 60), p: +g.preco || '' }; }),
       summary: String(r.resumo || '')
     };
   }
   function fromOCR(text) {                   // fallback without AI: the old rules
     var b = parseBill(text), rc = parseReceipt(text), isBill = b.type && b.type !== 'other';
-    return { kind: isBill ? BILL2K[b.type] : catKind(rc.cat), emitter: b.provider || rc.vendor || '', date: b.date || rc.date || today(), amount: b.amount || rc.amount || '', usage: b.usage || '', status: isBill ? 'topay' : 'paid', fields: [], due: '', ent: '', ref: '', iban: '', nif: '', number: '' };
+    return { kind: isBill ? BILL2K[b.type] : catKind(rc.cat), emitter: b.provider || rc.vendor || '', date: b.date || rc.date || today(), amount: b.amount || rc.amount || '', usage: b.usage || '', status: isBill ? 'topay' : 'paid', fields: [], warranty: [], due: '', ent: '', ref: '', iban: '', nif: '', number: '' };
   }
+  function myNifs() { return String(db.settings.nifs || '').split(/[^\d]+/).filter(function (n) { return n.length === 9; }); }
+  function mergeQR(p, q) {
+    if (!q) return p;
+    p.nif = q.nif || p.nif; p.number = q.number || p.number; p.date = q.date || p.date; if (q.total) p.amount = q.total; if (q.vat) p.vatAmt = q.vat;
+    p.qr = { type: q.type, atcud: q.atcud, buyer: q.buyer };
+    if (q.type === 'FR' || q.type === 'FS') p.status = p.status === 'dd' ? 'dd' : 'paid';
+    if (q.type === 'NC') p.amount = -Math.abs(num(p.amount));
+    var mine = myNifs(); p.noNif = q.buyer === '999999990' || (mine.length && mine.indexOf(q.buyer) < 0);
+    return p;
+  }
+  /* what you told the app about each company, applied to the next invoices */
+  function ruleKey(p) { return p.nif ? 'nif:' + p.nif : 'n:' + String(p.emitter || '').toLowerCase().trim(); }
+  function applyRule(p) {
+    var r = (db.rules || {})[ruleKey(p)] || (p.nif && p.emitter ? (db.rules || {})['n:' + p.emitter.toLowerCase().trim()] : null); if (!r) return p;
+    p.kind = r.kind || p.kind; if (r.irs) p.irs = r.irs; if (r.method === 'dd' && p.status !== 'paid') p.status = 'dd'; if (r.name) p.emitter = r.name; p.ruled = true; return p;
+  }
+
   var docQueue = [];
   function readDocs(files) {
     files = Array.prototype.slice.call(files || []); if (!files.length) return;
@@ -1512,14 +1620,20 @@
     var f = docQueue[0]; if (!f) return;
     var left = docQueue.length;
     busy('Reading the invoice…', f.name + (left > 1 ? ' · ' + left : ''));
-    var job = groqKey() ? aiRead(f).then(fromAI) : readFile(f).then(fromOCR);
-    job.then(function (p) { busy(); docReview(p, null, f); }).catch(function (e) {
+    var canv = f.type === 'application/pdf' ? pdfCanvases(f).catch(function () { return []; }) : imageCanvas(f, 2400).then(function (c) { return [c]; }).catch(function () { return []; });
+    canv.then(function (cs) {
+      var qr = cs.reduce(function (pr, c) { return pr.then(function (q) { return q || qrFromCanvas(c); }); }, Promise.resolve(null));
+      return qr.then(function (q) {
+        var job = groqKey() ? aiRead(f, cs).then(fromAI) : (f.type === 'application/pdf' ? readPdf(f) : readImage(f)).then(fromOCR);
+        return job.catch(function (e) { if (!q) throw e; return { kind: 'other', date: today(), status: 'topay', fields: [], warranty: [], aiFail: String(e && e.message) }; }).then(function (p) { return applyRule(mergeQR(p, q)); });
+      });
+    }).then(function (p) { busy(); docReview(p, null, f); }).catch(function (e) {
       console.error(e); busy();
       toast(String(e && e.message).indexOf('429') > -1 ? 'Too many requests to the AI. Wait a minute.' : 'Could not read it. Fill it in by hand.');
-      docReview({ kind: 'other', date: today(), status: 'topay', fields: [] }, null, f);
+      docReview({ kind: 'other', date: today(), status: 'topay', fields: [], warranty: [] }, null, f);
     });
   }
-  function doneDoc() { docQueue.shift(); if (docQueue.length) setTimeout(nextDoc, 300); else if ((location.hash || '#/').replace(/^#\/?/, '') === '' || /^#\/docs/.test(location.hash)) docsPage(); }
+  function doneDoc() { docQueue.shift(); if (docQueue.length) setTimeout(nextDoc, 300); else { var h = (location.hash || '#/').replace(/^#\/?/, ''); if (!h || /^docs/.test(h)) docsPage(); else if (/^warranties/.test(h)) warrantiesPage(); } }
   function busy(msg, small) {
     var b = $('#busy'); if (!b) { b = document.createElement('div'); b.id = 'busy'; document.body.appendChild(b); }
     if (!msg) { b.classList.remove('on'); return; } b.innerHTML = '<div><i></i><p style="margin:0">' + esc(msg) + (small ? '<br><small class="mut">' + esc(small) + '</small>' : '') + '</p></div>'; b.classList.add('on');
@@ -1527,63 +1641,204 @@
   /* review / edit: same form for a new read and for editing a saved bill or expense */
   function docReview(p, o, file) {
     var x = o ? o.x : null, isNew = !o;
-    if (o) { var D = x.doc || {}; p = { kind: docKind(o), emitter: docName(o), nif: D.nif || '', number: D.number || '', date: x.date, due: x.due || '', amount: x.amount, usage: x.usage || '', vat: x.vat, status: isPaid(x) ? 'paid' : x.method === 'dd' ? 'dd' : 'topay', ent: D.ent || '', ref: D.ref || '', iban: D.iban || '', fields: D.fields || [], note: x.note || '' }; }
+    if (o) { var D = x.doc || {}; p = { kind: docKind(o), emitter: docName(o), nif: D.nif || '', number: D.number || '', date: x.date, due: x.due || '', amount: x.amount, usage: x.usage || '', vatAmt: x.vatAmt || 0, status: isPaid(x) ? 'paid' : x.method === 'dd' ? 'dd' : 'topay', ent: D.ent || '', ref: D.ref || '', iban: D.iban || '', fields: D.fields || [], note: x.note || '', irs: x.irs || '', qr: D.qr, noNif: D.noNif, warranty: [] }; }
+    var irs = p.irs || (DK[p.kind] || DK.other).irs;
     var dup = isNew && allDocs().filter(function (q) { var D = q.x.doc || {}; return (p.number && D.number === p.number && (!p.nif || D.nif === p.nif)) || (p.amount && num(q.x.amount) === +p.amount && docDate(q) === p.date && docName(q).toLowerCase() === String(p.emitter || '').toLowerCase()); })[0];
-    var fl = (p.fields || []).concat([{ n: '', v: '' }, { n: '', v: '' }]).slice(0, 8);
+    var fl = (p.fields || []).concat([{ n: '', v: '' }, { n: '', v: '' }]).slice(0, 8), W = p.warranty || [];
     ask('<h2>' + (isNew ? 'Check the invoice' : 'Edit') + '</h2>' + (isNew ? '<p class="mut" style="margin-top:-6px"><span>' + (groqKey() ? 'Read by AI. Check the values before saving.' : 'Read without AI (turn it on in Settings for better results). Check the values.') + '</span>' + (p.summary ? '<br><i>' + esc(p.summary) + '</i>' : '') + '</p>' : '') +
+      (p.qr ? '<p class="okbox">✓ <span>NIF, date, number, VAT and total read from the invoice QR code.</span></p>' : '') + (p.ruled ? '<p class="okbox">✓ <span>Filled in with what you saved for this company.</span></p>' : '') +
+      (p.noNif ? '<p class="warnbox">⚠️ <span>This invoice does not have your NIF, so it does not count for IRS.</span></p>' : '') + (p.aiFail ? '<p class="warnbox"><span>The AI could not read the rest; the QR code data is filled in.</span></p>' : '') +
       (dup ? '<p class="warnbox"><span>⚠️ This looks like one you already have:</span> ' + esc(docName(dup)) + ' · ' + money(num(dup.x.amount)) + ' · ' + fdate(docDate(dup)) + '</p>' : '') +
       '<div class="f"><div><label>Type</label><select name="kind">' + Object.keys(DK).map(function (k) { return '<option value="' + k + '" ' + (k === p.kind ? 'selected' : '') + '>' + DK[k].i + ' ' + DK[k].l + '</option>'; }).join('') + '</select></div>' +
       field('From (company / shop)', 'emitter', p.emitter || '') + field('Total', 'amount', p.amount || '', 'text', 'inputmode="decimal" required') +
       '<div><label>Status</label><select name="status"><option value="topay" ' + (p.status === 'topay' ? 'selected' : '') + '>To pay</option><option value="dd" ' + (p.status === 'dd' ? 'selected' : '') + '>Direct debit (pays itself)</option><option value="paid" ' + (p.status === 'paid' ? 'selected' : '') + '>Already paid</option></select></div>' +
       field('Date', 'date', p.date || today(), 'date') + field('Pay by', 'due', p.due || '', 'date') +
+      '<div><label>IRS sector (e-Fatura)</label><select name="irs">' + Object.keys(IRS).map(function (k) { return '<option value="' + k + '" ' + (k === irs ? 'selected' : '') + '>' + IRS[k].l + '</option>'; }).join('') + '</select></div>' + field('VAT in this invoice (€)', 'vatAmt', p.vatAmt || '', 'text', 'inputmode="decimal"') +
       field('Invoice nº', 'number', p.number || '') + field('Issuer VAT nº (NIF)', 'nif', p.nif || '', 'text', 'inputmode="numeric"') +
       field('Multibanco entity', 'ent', p.ent || '', 'text', 'inputmode="numeric"') + field('Multibanco reference', 'ref', p.ref || '', 'text', 'inputmode="numeric"') +
       field('IBAN (transfer)', 'iban', p.iban || '') + field('Usage (kWh / m³)', 'usage', p.usage || '', 'text', 'inputmode="decimal"') +
       '<div class="w"><label>Details for this type</label><div class="kv">' + fl.map(function (f, i) { return '<input name="fn' + i + '" value="' + esc(f.n) + '" placeholder="e.g. Policy nº"><input name="fv' + i + '" value="' + esc(f.v) + '" placeholder="value">'; }).join('') + '</div></div>' +
-      '<div class="w">' + field('Note', 'note', p.note || '') + '</div>' + (isNew ? '' : attachField(x)) + '</div>' +
+      (isNew ? '<div class="w"><label>🛡️ Warranty</label><p class="mut" style="margin:0 0 6px;font-size:12px">Tick the products to keep in Warranties with this invoice (3 years by default for goods bought in Portugal).</p><div class="wl">' +
+        W.concat([{ n: '', p: '' }]).map(function (w, i) { return '<label class="wrow"><input type="checkbox" name="wk' + i + '" ' + (w.n ? 'checked' : '') + ' style="width:auto"><input name="wn' + i + '" value="' + esc(w.n) + '" placeholder="Product (e.g. Washing machine)"><input name="wp' + i + '" value="' + esc(w.p) + '" placeholder="Price" inputmode="decimal"></label>'; }).join('') + '</div></div>' : '') +
+      '<div class="w">' + field('Note', 'note', p.note || '') + '</div>' + (isNew ? '' : attachField(x)) +
+      '<div class="w"><label class="wrow" style="font-weight:500"><input type="checkbox" name="rule" checked style="width:auto"> <span>Remember type, IRS sector and direct debit for this company</span></label></div></div>' +
       (isNew ? '' : '<p><button type="button" class="btn s d" id="rm">Delete</button></p>'), function (d) {
-      var a = num(val(d, 'amount')); if (!(a > 0)) { toast('Enter the total'); return; }
+      var a = num(val(d, 'amount')); if (!a) { toast('Enter the total'); return; }
       var k = val(d, 'kind'), st = val(d, 'status'), fields = [];
       for (var i = 0; i < 8; i++) { var n = val(d, 'fn' + i), v = val(d, 'fv' + i); if (n && v) fields.push({ n: n, v: v }); }
-      var doc = { nif: val(d, 'nif').replace(/\D/g, ''), number: val(d, 'number'), ent: val(d, 'ent').replace(/\D/g, ''), ref: val(d, 'ref'), iban: val(d, 'iban'), fields: fields };
-      var wantBill = !!DK[k].bill;
+      var doc = { nif: val(d, 'nif').replace(/\D/g, ''), number: val(d, 'number'), ent: val(d, 'ent').replace(/\D/g, ''), ref: val(d, 'ref'), iban: val(d, 'iban'), fields: fields, qr: p.qr || null, noNif: !!p.noNif };
+      var wantBill = !!DK[k].bill, adding = isNew;
       if (o && (o.src === 'bill') !== wantBill) { // type changed between a home bill and an expense: move it
         if (o.src === 'bill') db.bills = db.bills.filter(function (y) { return y.id !== x.id; }); else db.expenses = db.expenses.filter(function (y) { return y.id !== x.id; });
-        isNew = true;
+        adding = true;
       }
       var it = x || { id: uid(), added: new Date().toISOString() };
       if (wantBill) { it.type = DK[k].bill; it.provider = val(d, 'emitter'); delete it.vendor; delete it.cat; }
-      else { it.vendor = val(d, 'emitter') || DK[k].l; it.cat = DK[k].cat; if (CATS.indexOf(it.cat) < 0) { db.settings.cats = db.settings.cats || []; if (db.settings.cats.indexOf(it.cat) < 0) db.settings.cats.push(it.cat); refreshCats(); } delete it.type; delete it.provider; }
-      it.kind = k; it.amount = a; it.date = val(d, 'date') || today(); it.due = val(d, 'due'); it.usage = num(val(d, 'usage')) || ''; it.note = val(d, 'note'); it.doc = doc;
+      else { it.vendor = val(d, 'emitter') || DK[k].l; it.cat = DK[k].cat; delete it.type; delete it.provider; }
+      it.kind = k; it.amount = a; it.date = val(d, 'date') || today(); it.due = val(d, 'due'); it.usage = num(val(d, 'usage')) || ''; it.note = val(d, 'note'); it.doc = doc; it.irs = val(d, 'irs'); it.vatAmt = num(val(d, 'vatAmt')) || 0;
       it.method = st === 'dd' ? 'dd' : ''; if (st === 'paid') { it.paid = true; it.paidOn = it.paidOn || (p.status === 'paid' ? it.date : today()); } else { it.paid = false; delete it.paidOn; }
-      if (file) saveAttach(it, d, file); else if (!isNew || x) saveAttach(it, d);
-      if (isNew) (wantBill ? db.bills : db.expenses).push(it);
-      save(); toast(st === 'paid' ? 'Saved as paid' : it.due ? 'Saved — waiting for payment until ' + fdate(it.due) : 'Saved — waiting for payment');
+      if (file) saveAttach(it, d, file); else if (x) saveAttach(it, d);
+      if (adding) (wantBill ? db.bills : db.expenses).push(it);
+      if (d.querySelector('[name=rule]').checked) { db.rules = db.rules || {}; var rk = ruleKey({ nif: doc.nif, emitter: val(d, 'emitter') }); db.rules[rk] = { kind: k, irs: it.irs, method: it.method, name: val(d, 'emitter') }; if (doc.nif && val(d, 'emitter')) db.rules['n:' + val(d, 'emitter').toLowerCase().trim()] = db.rules[rk]; }
+      var nw = 0;
+      if (isNew) for (var j = 0; j < 6; j++) { var wk = d.querySelector('[name=wk' + j + ']'); if (wk && wk.checked && val(d, 'wn' + j)) { db.items.push({ id: uid(), name: val(d, 'wn' + j), store: val(d, 'emitter'), bought: it.date, months: 36, price: num(val(d, 'wp' + j)) || '', docId: it.id }); nw++; } }
+      save(); writeDueCache(); toast(nw ? nw + ' warranty saved with the invoice' : st === 'paid' ? 'Saved as paid' : it.due ? 'Saved — waiting for payment until ' + fdate(it.due) : 'Saved — waiting for payment');
       if (file) doneDoc(); else docsPage();
-    }, isNew ? 'Save' : 'Save');
+    }, 'Save');
     var okClose = dlg.onclose;
     dlg.onclose = function () { var ok = dlg.returnValue === 'ok'; okClose(); if (file && !ok && docQueue[0] === file) doneDoc(); };
-    var rm = dlg.querySelector('#rm'); if (rm) rm.onclick = function () { if (o.src === 'bill') db.bills = db.bills.filter(function (y) { return y.id !== x.id; }); else db.expenses = db.expenses.filter(function (y) { return y.id !== x.id; }); idbDel(x.id); save(); dlg.close('x'); docsPage(); };
+    var rm = dlg.querySelector('#rm'); if (rm) rm.onclick = function () { if (o.src === 'bill') db.bills = db.bills.filter(function (y) { return y.id !== x.id; }); else db.expenses = db.expenses.filter(function (y) { return y.id !== x.id; }); idbDel(x.id); save(); writeDueCache(); dlg.close('x'); docsPage(); };
   }
   function addDocSheet() {
     dlg.innerHTML = '<form method="dialog"><h2>Add an invoice or receipt</h2><p class="mut">Electricity, water, phone, insurance, supermarket, pharmacy, fuel, taxes… The AI reads it and it waits until you pay.</p><div class="qgrid">' +
       '<label class="qa"><b>📷 Take photo</b><span>Paper invoice or receipt</span><input type="file" id="qcam" accept="image/*" capture="environment" hidden></label>' +
       '<label class="qa"><b>📎 Photo or PDF</b><span>From the gallery, email or files — several at once</span><input type="file" id="qfile" accept="image/*,application/pdf" multiple hidden></label>' +
+      '<button type="button" class="qa" id="qwar"><b>🛡️ Warranty</b><span>Keep the invoice of something you bought</span></button>' +
       '<button type="button" class="qa" id="qother"><b>✍️ Something else</b><span>Income, subscription, loan, purchase by hand…</span></button></div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" value="x">Close</button></div></form>';
     dlg.onclose = null; dlg.showModal();
     ['#qcam', '#qfile'].forEach(function (s) { dlg.querySelector(s).onchange = function (e) { var fs = Array.prototype.slice.call(e.target.files); dlg.close('x'); readDocs(fs); }; });
     dlg.querySelector('#qother').onclick = function () { quickSheet(); };
+    dlg.querySelector('#qwar').onclick = function () { dlg.close('x'); location.hash = '#/warranties'; };
   }
+
+  /* ---------- warranties: the invoice is kept with each product ---------- */
+  function warrantiesPage() {
+    var W = db.items.map(function (x) { return { x: x, e: warrantyEnd(x) }; }).sort(function (a, b) { return (a.e || '9').localeCompare(b.e || '9'); });
+    var valid = W.filter(function (o) { return o.e >= today(); });
+    view.innerHTML = '<div class="top"><div><h1>Warranties</h1><div class="mut">The invoice of everything you bought, ready when something breaks</div></div><div class="row"><label class="btn p" style="margin:0">📷 Invoice photo / PDF<input type="file" id="wfile" accept="image/*,application/pdf" multiple hidden></label><button class="btn" id="wnew">+ By hand</button></div></div>' +
+      '<div class="dkpi">' + kpi('Under warranty', String(valid.length), 'ok') + kpi('Ending in 60 days', String(valid.filter(function (o) { return o.e <= addDays(today(), 60); }).length)) + kpi('Value covered', money(valid.reduce(function (a, o) { return a + num(o.x.price); }, 0))) + '</div>' +
+      (W.length ? '<div class="wgrid">' + W.map(function (o) {
+        var x = o.x, tot = Math.max(1, daysTo(o.e) - daysTo(x.bought)), used = Math.min(1, Math.max(0, -daysTo(x.bought) / tot)), dl = daysTo(o.e), has = x.file || x.docId;
+        var st = dl < 0 ? '<span class="tag overdue">expired</span>' : dl <= 60 ? '<span class="tag draft"><span>ends in</span> ' + dl + ' <span>days</span></span>' : '<span class="tag paid">valid</span>';
+        return '<div class="card wcard"><div class="dtop"><b>' + esc(x.name) + '</b>' + st + '</div><div class="mut">' + esc(x.store || '') + (x.price ? ' · ' + money(x.price) : '') + '</div>' +
+          '<div class="wbar"><i style="width:' + Math.round(used * 100) + '%"></i></div><div class="mut" style="font-size:12px">' + fdate(x.bought) + ' → <b>' + fdate(o.e) + '</b></div>' +
+          '<div class="row dact">' + (has ? '<a href="#" class="btn s p" data-wf="' + x.id + '">📎 Invoice</a>' : '<label class="btn s" style="margin:0">📎 Add invoice<input type="file" data-wa="' + x.id + '" accept="image/*,application/pdf" hidden></label>') + '<button class="btn s" data-ei="' + x.id + '">Edit</button></div></div>';
+      }).join('') + '</div>' : '<div class="card empty">Take a photo of the invoice of a washing machine, phone or TV: the products are saved here with the invoice and you get a warning before the warranty ends.</div>');
+    $('#wfile').onchange = function (e) { readDocs(e.target.files); e.target.value = ''; };
+    $('#wnew').onclick = function () { itemForm(); };
+    view.onclick = function (e) {
+      var f = e.target.closest('[data-wf]'); if (f) { e.preventDefault(); var it = db.items.filter(function (y) { return y.id === f.dataset.wf; })[0]; if (it) openAttach(it.file ? it.id : it.docId); return; }
+      var b = e.target.closest('[data-ei]'); if (b) itemForm(db.items.filter(function (y) { return y.id === b.dataset.ei; })[0]);
+    };
+    view.querySelectorAll('[data-wa]').forEach(function (inp) { inp.onchange = function () { var f = inp.files[0], it = db.items.filter(function (y) { return y.id === inp.dataset.wa; })[0]; if (!f || !it) return; it.file = { name: f.name, type: f.type }; idbPut(it.id, f).then(function () { save(); warrantiesPage(); toast('Invoice saved'); }); }; });
+  }
+
+  /* ---------- month: calendar, forecast, ask the AI ---------- */
+  var calMonth = '';
+  function dueEvents(from, to) {     // everything that leaves or enters the account between two dates
+    var ev = [];
+    allDocs().forEach(function (o) { var x = o.x; if (!isPaid(x) && x.due && x.due >= from && x.due <= to) ev.push({ d: x.due, t: docName(o), a: -leftToPay(x), k: 'bill', dd: x.method === 'dd' }); });
+    db.subs.forEach(function (x) { if (x.active === false) return; var r = nextRenewal(x), n = 0; while (r && r <= to && n++ < 60) { if (r >= from) ev.push({ d: r, t: x.name, a: -num(x.amount), k: 'sub' }); r = stepDate(r, x.cycle); } });
+    db.income.forEach(function (x) { if (x.active === false || x.cycle !== 'monthly' || !x.day) return; var p = nextPay(x), n = 0; while (p && p <= to && n++ < 6) { if (p >= from) ev.push({ d: p, t: x.source || 'Income', a: num(x.amount), k: 'inc' }); p = addMonths(p, 1); } });
+    db.loans.forEach(function (L) { var i = loanInfo(L); if (i.done || !L.start) return; var day = +L.start.slice(8, 10) || 1, d = from.slice(0, 8) + String(Math.min(day, 28)).padStart(2, '0'), n = 0; while (d <= to && n++ < 6) { if (d >= from) ev.push({ d: d, t: L.name || 'Loan', a: -i.pay, k: 'loan' }); d = addMonths(d, 1); } });
+    return ev.sort(function (a, b) { return a.d.localeCompare(b.d); });
+  }
+  function monthPage(arg) {
+    autoDebits();
+    calMonth = calMonth || today().slice(0, 7);
+    var y = +calMonth.slice(0, 4), m = +calMonth.slice(5, 7), first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate(), lead = (first.getDay() + 6) % 7;
+    var byDay = {};
+    allDocs().forEach(function (o) { var x = o.x, d = isPaid(x) ? (x.due && x.due.slice(0, 7) === calMonth ? x.due : x.paidOn || x.date) : x.due || x.date; if (d && d.slice(0, 7) === calMonth) (byDay[d] = byDay[d] || []).push(o); });
+    var cells = ''; for (var i = 0; i < lead; i++) cells += '<div class="cd empty"></div>';
+    for (var dd = 1; dd <= days; dd++) {
+      var iso = calMonth + '-' + String(dd).padStart(2, '0'), l = byDay[iso] || [], un = l.filter(function (o) { return !isPaid(o.x); }), late = un.some(function (o) { return iso < today() && o.x.method !== 'dd'; });
+      cells += '<button class="cd ' + (iso === today() ? 'today ' : '') + (l.length ? 'has ' : '') + (late ? 'late ' : un.length ? 'due ' : l.length ? 'ok ' : '') + '" data-day="' + iso + '"><span>' + dd + '</span>' + (l.length ? '<i>' + money(l.reduce(function (a, o) { return a + num(o.x.amount); }, 0)).replace(/\s?€|€\s?/, '') + '</i>' : '') + '</button>';
+    }
+    var to = addDays(today(), 30), ev = dueEvents(today(), to), bal0 = db.accounts.filter(function (a) { return a.type === 'checking' || a.type === 'cash'; }).reduce(function (a, x) { return a + num(x.balance); }, 0);
+    var run = bal0, pts = [{ d: today(), v: run }]; ev.forEach(function (e) { run += e.a; pts.push({ d: e.d, v: run }); });
+    var out = ev.filter(function (e) { return e.a < 0; }).reduce(function (a, e) { return a - e.a; }, 0), inc = ev.filter(function (e) { return e.a > 0; }).reduce(function (a, e) { return a + e.a; }, 0);
+    view.innerHTML = '<div class="top"><div><h1>Month</h1><div class="mut">What is due, what comes in, and what is left</div></div><a class="btn" href="#/spending">📊 Spending</a></div>' +
+      '<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><button class="btn s" data-cm="-1">‹</button><h2 class="cap1" style="margin:0">' + monthName(calMonth) + '</h2><button class="btn s" data-cm="1">›</button></div>' +
+      '<div class="cal">' + [5, 6, 7, 8, 9, 10, 11].map(function (d) { return '<b>' + new Date(2024, 1, d).toLocaleDateString(LOCALE, { weekday: 'narrow' }) + '</b>'; }).join('') + cells + '</div><div class="legend"><span><i style="background:var(--bad)"></i>overdue</span><span><i style="background:var(--warn)"></i>to pay</span><span><i style="background:var(--ok)"></i>paid</span></div><div id="dayl"></div></div>' +
+      '<div class="card" style="margin-top:14px"><h2>Next 30 days</h2>' + (db.accounts.some(function (a) { return a.type === 'checking' || a.type === 'cash'; }) ? '<p class="mut" style="margin-top:-6px"><span>Starting from your current accounts:</span> <b>' + money(bal0) + '</b> → <span>expected on</span> ' + fdate(to) + ': <b class="' + (run < 0 ? 'neg' : '') + '">' + money(run) + '</b></p>' + (pts.length > 1 ? lineChart(pts.map(function (p) { return { date: p.d, v: p.v }; }), function (b) { return b.v; }, '#3556c9', money) : '') : '<p class="mut" style="margin-top:-6px"><span>Comes in</span> <b>' + money(inc) + '</b> · <span>goes out</span> <b>' + money(out) + '</b>. <a href="#/wealth">Add your current account</a> <span>to see the balance day by day.</span></p>') +
+      (ev.length ? '<table><tbody>' + ev.map(function (e) { return '<tr><td class="mut" style="width:96px">' + fdate(e.d) + '</td><td>' + esc(e.t) + ' <span class="tag">' + { bill: 'bill', sub: 'subscription', inc: 'income', loan: 'loan' }[e.k] + '</span>' + (e.dd ? ' <span class="tag sent">direct debit</span>' : '') + '</td><td class="r"><b style="color:' + (e.a > 0 ? 'var(--ok)' : 'inherit') + '">' + (e.a > 0 ? '+' : '') + money(e.a) + '</b></td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty" style="padding:12px">Nothing scheduled.</div>') + '</div>' +
+      '<div class="card" style="margin-top:14px"><h2>🤖 Ask the AI about your money</h2><div class="row"><input id="aq" placeholder="e.g. How much did I spend at the pharmacy this year?" style="flex:1;min-width:200px"><button class="btn p" id="ab">Ask</button></div><div class="chips" style="margin-top:8px">' +
+      ['Where can I save this month?', 'How much do I spend on electricity per year?', 'What is still to pay this month?'].map(function (q) { return '<button class="chip" data-aq="' + esc(q) + '">' + q + '</button>'; }).join('') + '</div><div id="aa" class="aians"></div>' +
+      '<p class="mut" style="font-size:12px;margin:8px 0 0">Only totals by month, category and company are sent to the Groq AI — no NIFs, references or attachments.</p></div>';
+    view.onclick = function (e) {
+      var c = e.target.closest('[data-cm]'); if (c) { calMonth = shiftMonth(calMonth, +c.dataset.cm); monthPage(); return; }
+      var d = e.target.closest('[data-day]'); if (d) { var l = byDay[d.dataset.day] || []; $('#dayl').innerHTML = '<h3 style="margin:14px 0 8px">' + fdate(d.dataset.day) + '</h3>' + (l.length ? '<div class="doclist">' + l.map(docCard).join('') + '</div>' : '<p class="mut">Nothing on this day.</p>'); return; }
+      var q = e.target.closest('[data-aq]'); if (q) { $('#aq').value = q.textContent; askAI(); return; }
+      var p = e.target.closest('[data-pay]'); if (p) { if (markPaid(p.dataset.pay)) { toast('Marked as paid ✓'); monthPage(); } return; }
+      var f = e.target.closest('[data-f]'); if (f) { e.preventDefault(); openAttach(f.dataset.f); return; }
+      var ed = e.target.closest('[data-ed]'); if (ed) { var o3 = findDoc(ed.dataset.ed); if (o3) docReview(null, o3); }
+    };
+    $('#ab').onclick = askAI; $('#aq').onkeydown = function (e) { if (e.key === 'Enter') askAI(); };
+  }
+  function aiContext() {
+    var by = {}, ven = {}, y0 = shiftMonth(today().slice(0, 7), -11);
+    allDocs().forEach(function (o) { var m = docDate(o).slice(0, 7); if (m < y0) return; var k = (DK[docKind(o)] || DK.other).l; by[m] = by[m] || {}; by[m][k] = round2((by[m][k] || 0) + num(o.x.amount)); var v = docName(o); if (daysTo(docDate(o)) > -365) ven[v] = round2((ven[v] || 0) + num(o.x.amount)); });
+    var top = Object.keys(ven).sort(function (a, b) { return ven[b] - ven[a]; }).slice(0, 25).map(function (v) { return v + ': ' + ven[v]; });
+    var un = allDocs().filter(function (o) { return !isPaid(o.x); }).map(function (o) { return docName(o) + ' ' + leftToPay(o.x) + ' € até ' + (o.x.due || '?'); });
+    return 'Hoje: ' + today() + '\nGastos por mês e tipo (€): ' + JSON.stringify(by) + '\nEmpresas/lojas nos últimos 12 meses (€): ' + top.join('; ') +
+      '\nPor pagar: ' + (un.join('; ') || 'nada') + '\nSubscrições ativas: ' + db.subs.filter(function (x) { return x.active !== false; }).map(function (x) { return x.name + ' ' + x.amount + ' ' + x.cycle; }).join('; ') +
+      '\nRendimentos mensais: ' + db.income.filter(function (x) { return x.active !== false; }).map(function (x) { return (x.source || 'rendimento') + ' ' + x.amount + ' ' + x.cycle; }).join('; ') +
+      '\nCréditos: ' + db.loans.map(function (L) { var i = loanInfo(L); return (L.name || 'crédito') + ' prestação ' + round2(i.pay) + ' em dívida ' + round2(i.bal); }).join('; ');
+  }
+  function askAI() {
+    var q = $('#aq').value.trim(), out = $('#aa'); if (!q) return;
+    if (!groqKey()) { out.textContent = 'Turn on the AI in Settings first.'; return; }
+    out.innerHTML = '<span class="mut">Thinking…</span>';
+    groqCall('És um assistente de finanças pessoais em Portugal. Responde em português de Portugal, curto e prático (máximo 6 linhas), só com base nestes dados. Se não houver dados suficientes, diz o que falta registar. Não dês aconselhamento de investimento.\n\nDados:\n' + aiContext() + '\n\nPergunta: ' + q, false, false)
+      .then(function (t) { out.textContent = t; }).catch(function (e) { out.textContent = String(e && e.message).indexOf('429') > -1 ? 'Too many requests to the AI. Wait a minute.' : 'The AI did not answer. Try again.'; });
+  }
+
+  /* ---------- IRS: what each invoice is worth in the tax return ---------- */
+  var irsYear = '';
+  function irsPage() {
+    irsYear = irsYear || String(+today().slice(0, 4) - (+today().slice(5, 7) <= 3 ? 1 : 0));
+    var people = Math.max(1, +db.settings.irsPeople || 1), L = allDocs().filter(function (o) { return docDate(o).slice(0, 4) === irsYear && num(o.x.amount) > 0; });
+    var S = {}; Object.keys(IRS).forEach(function (k) { S[k] = { t: 0, v: 0, n: 0, noNif: 0 }; });
+    L.forEach(function (o) { var k = docIrs(o), D = o.x.doc || {}; if (!S[k]) k = 'geral'; if (D.noNif) { S[k].noNif++; return; } S[k].t += num(o.x.amount); S[k].v += num(o.x.vatAmt); S[k].n++; });
+    var ivaTot = 0; Object.keys(IRS).forEach(function (k) { if (IRS[k].iva) ivaTot += S[k].v * .15; }); var ivaDed = Math.min(250, ivaTot);
+    var est = function (k) { var r = IRS[k]; if (r.iva || r.est === 0) return null; var cap = k === 'habitacao' ? rentCap(irsYear) : r.cap * (r.per === 'person' ? people : 1); return Math.min(cap, S[k].t * r.r); };
+    var total = ivaDed; Object.keys(IRS).forEach(function (k) { var e = est(k); if (e) total += e; });
+    var years = {}; allDocs().forEach(function (o) { var yy = docDate(o).slice(0, 4); if (yy) years[yy] = 1; }); years[irsYear] = 1;
+    var noNif = Object.keys(S).reduce(function (a, k) { return a + S[k].noNif; }, 0);
+    view.innerHTML = '<div class="top"><div><h1>IRS</h1><div class="mut">Your invoices by e-Fatura sector, with a simple estimate of the deductions</div></div><select id="iy" style="width:auto">' + Object.keys(years).sort().reverse().map(function (yy) { return '<option ' + (yy === irsYear ? 'selected' : '') + '>' + yy + '</option>'; }).join('') + '</select></div>' +
+      '<div class="hero card"><div><small>Estimated deductions</small><div class="big">' + money(total) + '</div><div class="mut">Estimate only, not tax advice: the Portal das Finanças has the final values. Invoices without your NIF do not count.</div></div></div>' +
+      '<div class="card" style="margin-top:14px"><table><thead><tr><th>Sector</th><th class="r">Invoices</th><th class="r">Spent</th><th class="r">Estimate</th></tr></thead><tbody>' +
+      Object.keys(IRS).filter(function (k) { return S[k].n || k === 'geral' || k === 'saude' || k === 'educacao'; }).map(function (k) { var e = est(k), r = IRS[k]; return '<tr><td><b>' + r.l + '</b>' + (r.iva ? '<div class="mut" style="font-size:12px">15% <span>of the VAT</span> (' + money(S[k].v) + ')</div>' : r.r ? '<div class="mut" style="font-size:12px">' + Math.round(r.r * 100) + '% · <span>up to</span> ' + money(k === 'habitacao' ? rentCap(irsYear) : r.cap * (r.per === 'person' ? people : 1)) + '</div>' : '') + '</td><td class="r">' + S[k].n + '</td><td class="r">' + money(S[k].t) + '</td><td class="r"><b>' + (r.iva ? '—' : e == null ? '—' : money(e)) + '</b></td></tr>'; }).join('') +
+      '<tr><td><b>VAT for asking for invoices</b><div class="mut" style="font-size:12px"><span>restaurants, hairdressers, car repairs, vets, passes, gyms</span> · <span>up to</span> 250 € <span>per household</span></div></td><td></td><td class="r">' + money(ivaTot) + '</td><td class="r"><b>' + money(ivaDed) + '</b></td></tr></tbody></table></div>' +
+      (noNif ? '<div class="card notice warn" style="margin-top:14px">⚠️ ' + noNif + ' <span>invoices without your NIF — they do not count. Next time give your NIF when you pay.</span></div>' : '') +
+      '<div class="card" style="margin-top:14px"><h2>Your details</h2><div class="f">' + field('Your NIF (and of whoever shares the IRS), separated by commas', 'nifs', db.settings.nifs || '', 'text', 'inputmode="numeric"') + field('People who file IRS (taxpayers)', 'pp', people, 'number', 'min="1" max="2"') + '</div><p><button class="btn p" id="isv">Save</button></p>' +
+      '<p class="mut" style="font-size:12px">Each invoice\'s sector is set when you save it (you can change it in Edit). Validate the same sectors in e-Fatura until the end of February.</p></div>';
+    $('#iy').onchange = function () { irsYear = $('#iy').value; irsPage(); };
+    $('#isv').onclick = function () { db.settings.nifs = val(view, 'nifs'); db.settings.irsPeople = Math.max(1, Math.min(2, parseInt(val(view, 'pp'), 10) || 1)); save(); toast('Saved'); irsPage(); };
+  }
+
+  /* ---------- receive files from "Share" on Android (manifest share_target, handled in sw.js) ---------- */
+  function takeShared() {
+    if (!('caches' in window)) return;
+    caches.open('ledgerly-share').then(function (c) { return c.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return c.match(k).then(function (r) { return r.blob().then(function (b) { c.delete(k); var n = decodeURIComponent(k.url.split('/').pop()); return new File([b], n, { type: b.type || (/\.pdf$/i.test(n) ? 'application/pdf' : 'image/jpeg') }); }); }); })); }); })
+      .then(function (fs) { if (fs && fs.length) readDocs(fs); else toast('Nothing was shared'); }).catch(function () { toast('Could not open the shared file'); });
+  }
+
+  /* ---------- reminders with the app closed: the service worker checks this list (periodic background sync) ---------- */
+  function writeDueCache() {
+    if (!('caches' in window)) return;
+    var L = allDocs().filter(function (o) { return !isPaid(o.x) && o.x.due && o.x.method !== 'dd'; }).map(function (o) { return { id: o.x.id, t: docName(o), a: leftToPay(o.x), d: o.x.due }; });
+    db.items.forEach(function (x) { var e = warrantyEnd(x); if (e && e >= today() && e <= addDays(today(), 30)) L.push({ id: 'w' + x.id, t: 'Warranty ends: ' + x.name, a: 0, d: e, w: 1 }); });
+    var pt = lsGet(LANGKEY) === 'pt';
+    caches.open('ledgerly-due').then(function (c) { return c.put('./__due.json', new Response(JSON.stringify({ pt: pt, cur: db.settings.currency, list: L }), { headers: { 'content-type': 'application/json' } })); }).catch(function () { });
+  }
+  function armBackground() {
+    if (!('serviceWorker' in navigator) || !('Notification' in window) || Notification.permission !== 'granted') return;
+    navigator.serviceWorker.ready.then(function (r) { if (r.periodicSync) return r.periodicSync.register('ledgerly-due', { minInterval: 6 * 3600 * 1000 }); }).catch(function () { });
+  }
+
   function aiSettingsHtml() {
     var site = window.LEDGERLY_GROQ_KEY && !/^__/.test(window.LEDGERLY_GROQ_KEY), mine = lsGet('ledgerly.groq');
     return '<div class="card" style="margin-top:14px" id="aiset"><h2>🤖 Reading invoices with AI <span class="tag ' + (groqKey() ? 'paid">on' : 'draft">off') + '</span></h2>' +
-      '<p class="mut">Photos and PDFs of invoices are sent to the Groq AI only to read them; nothing is kept there. Without AI, the app reads them on this device with simpler rules.</p>' +
+      '<p class="mut">The QR code of Portuguese invoices is read on this device. Photos and PDFs are also sent to the Groq AI only to read the rest; nothing is kept there. Without AI, the app reads them on this device with simpler rules.</p>' +
       (site ? '<p>✅ The key is already built into this site.</p>' : '') +
-      '<div class="row"><input id="gkey" type="password" placeholder="' + (mine ? 'Key saved on this device' : 'Groq API key (gsk_…), only if needed') + '" style="flex:1;min-width:220px"><button class="btn" id="gsave">Save key</button>' + (mine ? '<button class="btn d" id="gdel">Remove</button>' : '') + '</div></div>';
+      '<div class="row"><input id="gkey" type="password" placeholder="' + (mine ? 'Key saved on this device' : 'Groq API key (gsk_…), only if needed') + '" style="flex:1;min-width:220px"><button class="btn" id="gsave">Save key</button>' + (mine ? '<button class="btn d" id="gdel">Remove</button>' : '') + '</div>' +
+      '<p class="mut" style="font-size:12px;margin:10px 0 0">Your NIF for the IRS page: <a href="#/irs">IRS</a>. <span>Companies remembered:</span> ' + (function () { var n = {}; Object.keys(db.rules || {}).forEach(function (k) { n[(db.rules[k].name || k).toLowerCase()] = 1; }); return Object.keys(n).length; })() + (db.rules && Object.keys(db.rules).length ? ' · <a href="#" id="rclr">forget all</a>' : '') + '</p></div>';
   }
   function aiSettingsWire() {
     var s = $('#gsave'); if (s) s.onclick = function () { var v = $('#gkey').value.trim(); if (!/^gsk_/.test(v)) { toast('That does not look like a Groq key'); return; } lsSet('ledgerly.groq', v); groqHave = null; toast('Key saved on this device'); settings(); };
     var r = $('#gdel'); if (r) r.onclick = function () { lsSet('ledgerly.groq', null); toast('Key removed'); settings(); };
+    var c = $('#rclr'); if (c) c.onclick = function (e) { e.preventDefault(); db.rules = {}; save(); toast('Saved companies forgotten'); settings(); };
   }
 
   window.__ledgerly = window.__ledgerly || {}; window.__ledgerly.parseBill = parseBill;
@@ -1616,6 +1871,6 @@
       .forEach(function (e) { db.expenses.push({ id: uid(), date: e[0], vendor: e[1], cat: e[2], amount: e[3], note: '' }); });
   }
 
-  applyTheme(); refreshCats(); applyMode(); runRecurring(); autoDebits(); route(); lock(); notifyDue(); setTimeout(runSync, 1500);
+  applyTheme(); refreshCats(); applyMode(); runRecurring(); autoDebits(); route(); setTimeout(function () { writeDueCache(); armBackground(); }, 800); lock(); notifyDue(); setTimeout(runSync, 1500);
   if (!location.hash) location.hash = '#/';
 })();
